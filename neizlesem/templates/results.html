@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "_macros.html" import poster, rating_row, barcode %}
+{% block title %}Sonuçlar — Ne İzlesem?{% endblock %}
+{% block body_class %}page-results{% endblock %}
+
+{% set all_pairs = params.query_pairs() %}
+{% set detail_pairs = [] %}
+{% for k, v in all_pairs %}{% if k in ('k', 'g') %}{% set _ = detail_pairs.append((k, v)) %}{% endif %}{% endfor %}
+
+{% block content %}
+<section class="results-head">
+  <div class="tk tk-summary">
+    <div class="tk-main">
+      <p class="tk-title">Aradığın</p>
+      <ul class="sel-list">
+        {% for t in data.terms %}
+        <li class="sel sel-in"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('k', t.key))|qs }}" data-loading aria-label="{{ t.label }} temasını kaldır">{{ t.label }}<span class="x" aria-hidden="true">×</span></a></li>
+        {% endfor %}
+        {% for t in data.genre_terms %}
+        <li class="sel sel-in"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('g', t.ids[0]|string))|qs }}" data-loading aria-label="{{ t.label }} türünü kaldır">{{ t.label }}<span class="x" aria-hidden="true">×</span></a></li>
+        {% endfor %}
+        {% for t in data.excluded %}
+        <li class="sel sel-out"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('x', t.key))|qs }}" data-loading aria-label="{{ t.label }} hariç tutmayı kaldır">{{ t.label }} olmasın<span class="x" aria-hidden="true">×</span></a></li>
+        {% endfor %}
+        {% for g in params.exclude_genres %}
+        <li class="sel sel-out"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('xg', g|string))|qs }}" data-loading aria-label="{{ genres[g] }} hariç tutmayı kaldır">{{ genres[g] }} olmasın<span class="x" aria-hidden="true">×</span></a></li>
+        {% endfor %}
+        {% if not (data.terms or data.genre_terms or data.excluded or params.exclude_genres) %}
+        <li class="sel sel-plain">Tema seçmedin, herkesin sevdiği filmler geliyor</li>
+        {% endif %}
+      </ul>
+      {% if data.unresolved %}
+      <p class="warn">{{ data.unresolved|join(', ') }} için TMDB'de eşleşen etiket bulunamadı, bu tema aramaya katılmadı.</p>
+      {% endif %}
+    </div>
+    <div class="tk-stub">
+      <a class="btn-velvet" href="{{ url_for('main.surprise') }}?{{ all_pairs|qs }}" data-loading>Sürpriz yap</a>
+      <a class="btn-text" href="{{ url_for('main.index') }}?{{ all_pairs|qs }}">Aramayı düzenle</a>
+    </div>
+  </div>
+
+  {% if data.results %}
+  <form class="sortbar" method="get" action="{{ url_for('main.results') }}">
+    {% for k, v in all_pairs if k != 'sirala' %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    <p class="count"><span>{{ data.results|length }}</span> film, {{ data.candidate_count }} aday arasından seçildi</p>
+    <label class="sort">Sırala
+      <select name="sirala" data-autosubmit>
+        {% for v, l in sorts %}<option value="{{ v }}" {% if params.sort == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select>
+    </label>
+    <noscript><button type="submit">Uygula</button></noscript>
+  </form>
+  {% endif %}
+</section>
+
+{% if not data.results %}
+<section class="empty">
+  <h1>Bu kombinasyona uyan film çıkmadı</h1>
+  <p>Bir temayı kaldırmayı, “olmasın” seçimlerini azaltmayı ya da dönem ve puan filtresini gevşetmeyi dene.</p>
+  <a class="btn-gold" href="{{ url_for('main.index') }}?{{ all_pairs|qs }}">Aramayı düzenle</a>
+</section>
+{% else %}
+<ol class="result-list">
+  {% for m in data.results %}
+  <li class="tc" style="--i: {{ [loop.index0, 9]|min }}">
+    <a class="tc-link" href="{{ url_for('main.movie', movie_id=m.id) }}{% if detail_pairs %}?{{ detail_pairs|qs }}{% endif %}">
+      <div class="tc-main">
+        {{ poster(m.poster, m.title, "tc-poster", m.id) }}
+        <div class="tc-body">
+          <h2 class="tc-title">{{ m.title }}</h2>
+          <p class="tc-sub">
+            {%- if m.year %}<span>{{ m.year }}</span>{% endif -%}
+            {%- if m.original_title and m.original_title != m.title %}<em>{{ m.original_title }}</em>{% endif -%}
+          </p>
+          <p class="meta">{{ ([m.runtime_text] + m.genres)|select|join(', ') }}{% if m.directors %}. Yönetmen: {{ m.directors|join(', ') }}{% endif %}</p>
+          {% if m.match.pct is not none %}
+          <div class="match">
+            <div class="match-bar" role="img" aria-label="Uygunluk yüzde {{ m.match.pct }}"><span style="--w: {{ m.match.pct }}%"></span></div>
+            <p class="match-pct">Uygunluk %{{ m.match.pct }}</p>
+            <ul class="match-tags">
+              {% for t in m.match.matched %}<li class="hit">{{ t }}</li>{% endfor %}
+              {% for t in m.match.missed %}<li class="miss">{{ t }}</li>{% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          {% if m.overview %}<p class="overview">{{ m.overview }}</p>{% endif %}
+          {% if m.pros %}<p class="pros">Yorumlarda övülen: {{ m.pros|map('lower_tr')|join(', ') }}</p>{% endif %}
+          {{ rating_row(m.ratings) }}
+        </div>
+      </div>
+      <div class="tc-stub">
+        <span class="tc-rank"><small>Sıra</small>{{ '%02d'|format(loop.index) }}</span>
+        <span class="tc-score {{ m.pusula.score|score_class }}"><b>{{ m.pusula.score|tr1 }}</b><small>Pusula</small></span>
+        {{ barcode() }}
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+{% endblock %}

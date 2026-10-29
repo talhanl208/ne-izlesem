@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% from "_macros.html" import poster, barcode %}
+{% block title %}{{ d.title }}{% if d.year %} ({{ d.year }}){% endif %} — Ne İzlesem?{% endblock %}
+{% block body_class %}page-detail{% endblock %}
+
+{% block content %}
+<section class="film-hero" {% if d.backdrop %}style="--backdrop: url('{{ d.backdrop }}')"{% endif %}>
+  <div class="film-hero-inner">
+    {% if back %}<a class="back" href="{{ back }}"><span aria-hidden="true">‹</span> Sonuçlara dön</a>{% endif %}
+    <div class="film-hero-grid">
+      {{ poster(d.poster, d.title, "poster-lg", d.id) }}
+      <div class="film-hero-text">
+        <p class="film-kicker">{{ [d.year, d.runtime_text, d.certification and ("Yaş sınırı " ~ d.certification)]|select|join(', ') }}</p>
+        <h1 class="foil">{{ d.title }}</h1>
+        {% if d.original_title and d.original_title != d.title %}<p class="orig">{{ d.original_title }}</p>{% endif %}
+        <ul class="genre-list">{% for g in d.genres %}<li>{{ g }}</li>{% endfor %}</ul>
+        {% if d.tagline %}<p class="tagline">“{{ d.tagline }}”</p>{% endif %}
+        {% if d.matched or d.missed %}
+        <ul class="match-tags match-tags-lg" aria-label="Seçtiğin temalar">
+          {% for t in d.matched %}<li class="hit">{{ t }}</li>{% endfor %}
+          {% for t in d.missed %}<li class="miss">{{ t }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="film-layout">
+  <div class="film-main">
+    <section class="sec story" aria-labelledby="h-story">
+      <h2 id="h-story">Kısaca</h2>
+      {% for p in d.story %}<p>{{ p }}</p>{% endfor %}
+    </section>
+
+    {% if d.overview %}
+    <section class="sec" aria-labelledby="h-plot">
+      <h2 id="h-plot">Konusu</h2>
+      <p class="plot">{{ d.overview }}</p>
+      {% if d.overview_lang == 'en' %}<p class="note">Türkçe özeti olmadığı için TMDB'deki İngilizce özet gösteriliyor.</p>{% endif %}
+    </section>
+    {% endif %}
+
+    {% if d.trailer %}
+    <section class="sec" aria-labelledby="h-trailer">
+      <h2 id="h-trailer">Fragman{% if d.trailer.turkish %} <small>Türkçe</small>{% endif %}</h2>
+      <button type="button" class="trailer" data-yt="{{ d.trailer.key }}" aria-label="Fragmanı oynat: {{ d.trailer.name }}">
+        <img src="https://i.ytimg.com/vi/{{ d.trailer.key }}/hqdefault.jpg" alt="" loading="lazy">
+        <span class="trailer-play" aria-hidden="true"></span>
+      </button>
+    </section>
+    {% endif %}
+
+    <section class="sec reviews" aria-labelledby="h-reviews">
+      <h2 id="h-reviews">İzleyiciler ne diyor?</h2>
+      {% set r = d.reviews %}
+      {% if r.count %}
+      <p class="sub">TMDB'deki {{ r.count }} izleyici yorumu tarandı{% if r.rated_count %}, {{ r.rated_count }} tanesi puan da vermiş{% endif %}. Yorumlar çoğunlukla İngilizce.</p>
+      <div class="procon">
+        <div class="pro">
+          <h3>Övülenler</h3>
+          {% if r.pros or r.flags_pos %}
+          <ul>
+            {% for p in r.pros %}<li>{{ p.text }} <small>{{ p.count }} yorumda</small></li>{% endfor %}
+            {% for f in r.flags_pos %}<li>{{ f.text }} <small>{{ f.count }} yorumda</small></li>{% endfor %}
+          </ul>
+          {% else %}<p class="note">Öne çıkan ortak bir övgü yok.</p>{% endif %}
+        </div>
+        <div class="con">
+          <h3>Eleştirilenler</h3>
+          {% if r.cons or r.flags_neg %}
+          <ul>
+            {% for c in r.cons %}<li>{{ c.text }} <small>{{ c.count }} yorumda</small></li>{% endfor %}
+            {% for f in r.flags_neg %}<li>{{ f.text }} <small>{{ f.count }} yorumda</small></li>{% endfor %}
+          </ul>
+          {% else %}<p class="note">Ortak bir şikâyet çıkmadı.</p>{% endif %}
+        </div>
+      </div>
+      {% if r.mixed %}<p class="mixed">{% for m in r.mixed %}{{ m.text }}{% if not loop.last %}; {% endif %}{% endfor %}.</p>{% endif %}
+      {% for q in r.quotes %}
+      <blockquote class="quote quote-{{ q.tone }}">
+        <p lang="en">{{ q.text }}</p>
+        <footer>{{ q.author }}{% if q.rating is not none %}, {{ q.rating|tr1 }}/10{% endif %}{% if q.url %}. <a href="{{ q.url }}" rel="noopener noreferrer" target="_blank">Yorumun tamamı</a>{% endif %}</footer>
+      </blockquote>
+      {% endfor %}
+      {% else %}
+      <p class="note">Bu film için TMDB'de henüz izleyici yorumu yok.</p>
+      {% endif %}
+    </section>
+
+    {% if d.cast %}
+    <section class="sec" aria-labelledby="h-cast">
+      <h2 id="h-cast">Oyuncular</h2>
+      <ul class="cast">
+        {% for c in d.cast %}
+        <li class="cast-item">
+          {% if c.photo %}<img src="{{ c.photo }}" alt="" loading="lazy" width="64" height="96">{% else %}<span class="cast-ph" aria-hidden="true">{{ c.name[:1] }}</span>{% endif %}
+          <div>
+            <p class="cast-name">{{ c.name }}</p>
+            {% if c.character %}<p class="cast-role">{{ c.character }}</p>{% endif %}
+            {% if c.known_for %}
+            <p class="cast-known">Ayrıca:
+              {% for f in c.known_for %}<a href="{{ url_for('main.movie', movie_id=f.id) }}">{{ f.title }}{% if f.year %} ({{ f.year }}){% endif %}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+            </p>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <dl class="crew">
+        {% if d.directors %}<div><dt>Yönetmen</dt><dd>{{ d.directors|join(', ') }}</dd></div>{% endif %}
+        {% if d.writers %}<div><dt>Senaryo</dt><dd>{{ d.writers|join(', ') }}</dd></div>{% endif %}
+        {% if d.composer %}<div><dt>Müzik</dt><dd>{{ d.composer|join(', ') }}</dd></div>{% endif %}
+        {% if d.dop %}<div><dt>Görüntü yönetmeni</dt><dd>{{ d.dop|join(', ') }}</dd></div>{% endif %}
+      </dl>
+    </section>
+    {% endif %}
+
+    {% if d.keywords %}
+    <section class="sec" aria-labelledby="h-kw">
+      <h2 id="h-kw">Temaları</h2>
+      <p class="sub">Bir temaya dokun, aynı temayı taşıyan diğer filmleri bulalım.</p>
+      <ul class="kw-list">
+        {% for k in d.keywords %}
+        <li><a href="{{ url_for('main.results') }}?k=t{{ k.id }}" data-loading {% if not k.translated %}lang="en"{% endif %}>{{ k.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="film-side">
+    <section class="tk tk-vertical scorecard" aria-labelledby="h-score">
+      <div class="tk-main">
+        <h2 id="h-score" class="tk-title">Pusula Puanı</h2>
+        <p class="score-big {{ d.pusula.score|score_class }}">
+          <span class="score-big-num" data-count="{{ d.pusula.score if d.pusula.score is not none else '' }}">{{ d.pusula.score|tr1 }}</span><span class="score-big-of">/10</span>
+        </p>
+        <p class="verdict">{{ d.verdict }}</p>
+        <p class="confidence">Güven: {{ d.pusula.confidence|lower_tr }}</p>
+      </div>
+      <div class="tk-stub">
+        <dl class="tk-fields">
+          <div><dt>IMDb</dt><dd>{{ d.ratings.imdb|tr1 }}<small>{% if d.ratings.imdb_votes_text %}{{ d.ratings.imdb_votes_text }} oy{% else %}veri yok{% endif %}</small></dd></div>
+          <div><dt>TMDB</dt><dd>{{ d.ratings.tmdb|tr1 if d.ratings.tmdb else '—' }}<small>{% if d.ratings.tmdb_votes_text %}{{ d.ratings.tmdb_votes_text }} oy{% else %}veri yok{% endif %}</small></dd></div>
+          {% if d.ratings.rt is not none %}<div><dt>Rotten Tomatoes</dt><dd>%{{ d.ratings.rt }}<small>eleştirmen</small></dd></div>{% endif %}
+          {% if d.ratings.metacritic is not none %}<div><dt>Metacritic</dt><dd>{{ d.ratings.metacritic }}<small>/100</small></dd></div>{% endif %}
+        </dl>
+        {% if d.pusula.components %}
+        <details class="breakdown">
+          <summary>Puan nasıl hesaplandı?</summary>
+          <ul>
+            {% for c in d.pusula.components %}
+            <li>
+              <p><span>{{ c.label }}</span><span>{{ c.value|tr1 }}</span></p>
+              <div class="bar"><span style="--w: {{ (c.value * 10)|round|int }}%"></span></div>
+              <small>{{ c.raw }}, ağırlığı %{{ c.share }}</small>
+            </li>
+            {% endfor %}
+          </ul>
+          <a href="{{ url_for('main.about') }}">Yöntemin ayrıntısı</a>
+        </details>
+        {% endif %}
+        {{ barcode() }}
+      </div>
+    </section>
+
+    {% if d.providers %}
+    <section class="side-card" aria-labelledby="h-where">
+      <h2 id="h-where">Nerede izlenir?</h2>
+      {% for kind, label in [('abonelik', 'Abonelikle'), ('kiralik', 'Kiralık'), ('satin', 'Satın al')] %}
+      {% if d.providers[kind] %}
+      <p class="sub">{{ label }}</p>
+      <ul class="prov">
+        {% for p in d.providers[kind] %}<li>{% if p.logo %}<img src="{{ p.logo }}" alt="" width="30" height="30" loading="lazy">{% endif %}{{ p.name }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% endfor %}
+      <p class="note">Türkiye için. Kaynak: JustWatch{% if d.providers.link %}, <a href="{{ d.providers.link }}" rel="noopener noreferrer" target="_blank">güncel liste</a>{% endif %}.</p>
+    </section>
+    {% endif %}
+
+    <section class="side-card" aria-labelledby="h-facts">
+      <h2 id="h-facts">Bilgiler</h2>
+      <dl class="facts">
+        {% if d.release_date_text %}<div><dt>Vizyon</dt><dd>{{ d.release_date_text }}</dd></div>{% endif %}
+        {% if d.language %}<div><dt>Orijinal dil</dt><dd>{{ d.language }}</dd></div>{% endif %}
+        {% if d.countries %}<div><dt>Ülke</dt><dd>{{ d.countries|join(', ') }}</dd></div>{% endif %}
+        {% if d.budget_text %}<div><dt>Bütçe</dt><dd>{{ d.budget_text }}</dd></div>{% endif %}
+        {% if d.revenue_text %}<div><dt>Hasılat</dt><dd>{{ d.revenue_text }}</dd></div>{% endif %}
+        {% if d.ratings.awards %}<div><dt>Ödüller</dt><dd lang="en">{{ d.ratings.awards }}</dd></div>{% endif %}
+      </dl>
+      <p class="links">
+        {% if d.imdb_url %}<a href="{{ d.imdb_url }}" rel="noopener noreferrer" target="_blank">IMDb sayfası</a>{% endif %}
+        <a href="{{ d.tmdb_url }}" rel="noopener noreferrer" target="_blank">TMDB sayfası</a>
+      </p>
+    </section>
+  </aside>
+</div>
+
+{% if d.recommendations %}
+<section class="similar" aria-labelledby="h-similar">
+  <h2 id="h-similar">Bunu sevenler bunları da izledi</h2>
+  <ul class="similar-grid">
+    {% for s in d.recommendations %}
+    <li><a href="{{ url_for('main.movie', movie_id=s.id) }}">{{ poster(s.poster, s.title, "", s.id) }}<span class="similar-title">{{ s.title }}</span>{% if s.year %}<span class="similar-year">{{ s.year }}</span>{% endif %}</a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,15 @@
+{
+  "name": "Ne İzlesem?",
+  "short_name": "Ne İzlesem",
+  "description": "Temaya göre film bul: IMDb puanı, izleyici yorumları ve Pusula Puanı.",
+  "lang": "tr",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1b0b12",
+  "theme_color": "#1b0b12",
+  "icons": [
+    {"src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/static/img/icon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}

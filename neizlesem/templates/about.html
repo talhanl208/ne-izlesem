@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Nasıl çalışır? — Ne İzlesem?{% endblock %}
+{% block content %}
+<article class="page-text">
+  <h1 class="foil">Nasıl çalışır?</h1>
+
+  <h2>Temalar nereden geliyor?</h2>
+  <p>TMDB, her filmi “revenge”, “heist”, “time travel” gibi yüzlerce ayrıntılı etiketle işaretliyor. Seçtiğin Türkçe temaları bu etiketlere (eş anlamlılarıyla birlikte) eşliyoruz. Listede olmayan bir şeyi arama kutusundan doğrudan TMDB etiketleri arasında arayabilirsin.</p>
+
+  <h2>Uygunluk yüzdesi</h2>
+  <p>Her aday filmin gerçek etiketlerine bakıp seçtiğin temaların kaçını taşıdığını sayıyoruz. Türler yarım puan sayılıyor. “Olmasın” dediğin tema ya da türü taşıyan film doğrudan eleniyor.</p>
+
+  <h2>Pusula Puanı</h2>
+  <p>Tek bir sitenin puanına güvenmek yerine birkaç kaynağı birleştiriyoruz. Az oy almış filmlerin şişkin puanlarını önlemek için IMDb ve TMDB puanlarına Bayes düzeltmesi uyguluyoruz: oy sayısı azaldıkça puan genel ortalamaya yaklaşıyor.</p>
+  <table class="weights">
+    <thead><tr><th>Kaynak</th><th>Ağırlık</th></tr></thead>
+    <tbody>
+      <tr><td>IMDb izleyici puanı (düzeltilmiş)</td><td>%{{ (weights.imdb * 100)|round|int }}</td></tr>
+      <tr><td>İzleyici yorum analizi</td><td>%{{ (weights.reviews * 100)|round|int }}</td></tr>
+      <tr><td>TMDB izleyici puanı (düzeltilmiş)</td><td>%{{ (weights.tmdb * 100)|round|int }}</td></tr>
+      <tr><td>Rotten Tomatoes eleştirmen onayı</td><td>%{{ (weights.rt * 100)|round|int }}</td></tr>
+      <tr><td>Metacritic</td><td>%{{ (weights.metacritic * 100)|round|int }}</td></tr>
+    </tbody>
+  </table>
+  <p>Bir kaynak yoksa ağırlığı diğerlerine paylaştırılır. Yorum sayısı azsa yorum analizinin ağırlığı da düşer. Her filmin sayfasında “Puan nasıl hesaplandı?” bölümünden dökümü görebilirsin.</p>
+
+  <h2>Yorum analizi</h2>
+  <p>TMDB'deki izleyici yorumlarını cümle cümle okuyup hangi konudan (oyunculuk, senaryo, tempo, final…) olumlu ya da olumsuz bahsedildiğini sayıyoruz. Bir konu, en az iki farklı yorumda aynı yönde geçiyorsa “övülenler” ya da “eleştirilenler” listesine giriyor. Analiz kural tabanlı; herhangi bir yapay zekâ servisine veri gönderilmiyor.</p>
+
+  <h2>Sıralama</h2>
+  <p>“En uygun” sıralamada uygunluk yüzdesi %60, Pusula Puanı %40 ağırlık taşıyor. Yani seçtiğin temaların hepsini taşıyan iyi bir film, tek temayı taşıyan çok iyi bir filmin önüne geçebiliyor.</p>
+
+  <h2>Kaynaklar ve teşekkür</h2>
+  <p class="credit-row">
+    <a class="tmdb-credit" href="https://www.themoviedb.org/" rel="noopener noreferrer" target="_blank">
+      {% if tmdb_logo %}<img src="{{ tmdb_logo }}" alt="The Movie Database (TMDB)" class="tmdb-logo">{% else %}The Movie Database (TMDB){% endif %}
+    </a>
+  </p>
+  <p>Film bilgileri, temalar, oyuncular, görseller ve izleyici yorumları TMDB'den gelir. Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmış veya sertifikalandırılmış değildir.</p>
+  <p>IMDb puanları, IMDb'nin <a href="https://developer.imdb.com/non-commercial-datasets/" rel="noopener noreferrer" target="_blank">kişisel ve ticari olmayan kullanım için yayımladığı veri setinden</a> alınır. Rotten Tomatoes ve Metacritic puanları (varsa) OMDb üzerinden gelir. Türkiye'deki yayın platformu bilgisi JustWatch kaynaklıdır.</p>
+  <p>IMDb, Rotten Tomatoes, Metacritic ve platform adları ilgili şirketlerin markalarıdır; burada yalnızca puanın kaynağını belirtmek için yazı olarak geçer.</p>
+</article>
+{% endblock %}

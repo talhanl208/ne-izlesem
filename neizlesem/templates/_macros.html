@@ -1,0 +1,17 @@
+{% macro poster(src, title, cls="", vt=None) -%}
+<div class="poster {{ cls }}"{% if vt %} style="view-transition-name: afis-{{ vt }}"{% endif %}>
+  {%- if src %}<img src="{{ src }}" alt="{{ title }} afişi" loading="lazy" decoding="async" data-fallback="{{ title }}">
+  {%- else %}<span class="poster-fallback">{{ title }}</span>{% endif -%}
+</div>
+{%- endmacro %}
+
+{% macro rating_row(r) -%}
+<ul class="ratings">
+  {% if r.imdb is not none %}<li><b>IMDb</b><span>{{ r.imdb|tr1 }}</span>{% if r.imdb_votes_text %}<small>{{ r.imdb_votes_text }} oy</small>{% endif %}</li>{% endif %}
+  {% if r.rt is not none %}<li><b>Rotten Tomatoes</b><span>%{{ r.rt }}</span></li>{% endif %}
+  {% if r.metacritic is not none %}<li><b>Metacritic</b><span>{{ r.metacritic }}</span></li>{% endif %}
+  {% if r.tmdb %}<li><b>TMDB</b><span>{{ r.tmdb|tr1 }}</span></li>{% endif %}
+</ul>
+{%- endmacro %}
+
+{% macro barcode() -%}<span class="barcode" aria-hidden="true"></span>{%- endmacro %}

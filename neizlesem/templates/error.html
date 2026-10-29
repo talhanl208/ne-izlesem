@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ title or 'Bir sorun çıktı' }} — Ne İzlesem?{% endblock %}
+{% block body_class %}page-text-wrap{% endblock %}
+{% block content %}
+<section class="page-text error-page">
+  <div class="tk tk-vertical tk-error">
+    <div class="tk-main">
+      <p class="tk-title">Gösterim iptal</p>
+      <h1>{{ title or 'Bir sorun çıktı' }}</h1>
+      <p>{{ message }}</p>
+    </div>
+    <div class="tk-stub">
+      {% if retry %}<button type="button" class="btn-velvet" data-reload>Tekrar dene</button>{% endif %}
+      <a class="btn-text" href="{{ url_for('main.index') }}">Ana sayfaya dön</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

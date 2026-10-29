@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Kurulum — Ne İzlesem?{% endblock %}
+{% block content %}
+<section class="page-text">
+  <h1 class="foil">Önce TMDB anahtarını ekleyelim</h1>
+  <p>Film verileri TMDB'den geliyor ve kişisel kullanım için ücretsiz bir API anahtarı gerekiyor. Beş dakikalık iş:</p>
+  <ol>
+    <li><a href="https://www.themoviedb.org/signup" rel="noopener noreferrer" target="_blank">themoviedb.org</a> üzerinde ücretsiz hesap aç.</li>
+    <li>Profil, Ayarlar, API bölümünden geliştirici anahtarı iste (kişisel kullanım seç).</li>
+    <li>“API Read Access Token” değerini kopyala (“API Key” de olur ama token daha güvenli).</li>
+    <li>Proje klasöründeki <code>.env</code> dosyasına <code>TMDB_API_KEY=buraya_yapistir</code> satırını ekle.</li>
+    <li>Uygulamayı yeniden başlat.</li>
+  </ol>
+  <p><a class="btn-gold" href="{{ url_for('main.index') }}">Ana sayfaya dön</a></p>
+</section>
+{% endblock %}

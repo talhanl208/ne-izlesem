@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Ne İzlesem?{% endblock %}</title>
+  <meta name="description" content="Canının çektiği temaları seç, sana uyan filmleri puanlarıyla bulalım.">
+  <meta name="theme-color" content="#1b0b12">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/icon.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon-192.png') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ne İzlesem?">
+  <script src="{{ url_for('static', filename='js/early.js') }}"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..700&family=Jost:wght@300..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip" href="#icerik">İçeriğe geç</a>
+
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('main.index') }}" aria-label="Ne İzlesem? ana sayfa">
+      <svg class="brand-mark" viewBox="0 0 40 26" aria-hidden="true">
+        <path d="M2 2h36v7a4 4 0 0 0 0 8v7H2v-7a4 4 0 0 0 0-8z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M28 4v18" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2.4"/>
+        <circle cx="15" cy="13" r="3.2" fill="currentColor"/>
+      </svg>
+      <span class="brand-word">Ne İzlesem<span class="brand-q">?</span></span>
+    </a>
+    <form class="quicksearch" action="{{ url_for('main.search') }}" role="search">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input type="search" name="q" placeholder="Film adıyla ara" value="{{ q or '' }}" aria-label="Film adıyla ara" autocomplete="off" maxlength="80">
+    </form>
+  </header>
+
+  <main id="icerik">{% block content %}{% endblock %}</main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="brand-word">Ne İzlesem<span class="brand-q">?</span></span>
+      <p>Kişisel kullanım için yapılmış, ticari olmayan bir film bulma projesi.</p>
+      <p><a href="{{ url_for('main.about') }}">Puanlar nasıl hesaplanıyor?</a></p>
+    </div>
+    <div class="credits">
+      <a class="tmdb-credit" href="https://www.themoviedb.org/" rel="noopener noreferrer" target="_blank">
+        {% if tmdb_logo %}<img src="{{ tmdb_logo }}" alt="The Movie Database (TMDB)" class="tmdb-logo">{% else %}The Movie Database (TMDB){% endif %}
+      </a>
+      <p>Film bilgileri, temalar, oyuncular, görseller ve izleyici yorumları TMDB'den gelir. Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmış veya sertifikalandırılmış değildir.</p>
+      <p>IMDb puanları, IMDb'nin kişisel ve ticari olmayan kullanım için yayımladığı veri setinden alınır{% if imdb_updated %} (güncelleme: {{ imdb_updated }}){% endif %}.{% if omdb_on %} Rotten Tomatoes ve Metacritic puanları OMDb üzerinden gelir.{% endif %} Yayın platformu bilgisi: JustWatch.</p>
+    </div>
+  </footer>
+
+  {# Perde: arama sonucu gelince açılır #}
+  <div class="curtain curtain-intro" aria-hidden="true">
+    <div class="curtain-panel curtain-left"></div>
+    <div class="curtain-panel curtain-right"></div>
+  </div>
+
+  {# Yükleniyor: perde kapanır, film geri sayımı döner #}
+  <div class="loading" id="loading" hidden role="status" aria-live="polite">
+    <div class="curtain-panel curtain-left"></div>
+    <div class="curtain-panel curtain-right"></div>
+    <div class="valance" aria-hidden="true"></div>
+    <div class="loading-center">
+      <div class="leader" aria-hidden="true">
+        <span class="leader-sweep"></span>
+        <span class="leader-num">3</span>
+      </div>
+      <p class="loading-text">Film arşivi taranıyor…</p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

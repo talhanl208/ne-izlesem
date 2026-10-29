@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% from "_macros.html" import barcode %}
+{% block body_class %}page-home{% endblock %}
+
+{% macro chip(kind, key, label, state=0, extra="") -%}
+<button type="button" class="chip {{ extra }}" data-kind="{{ kind }}" data-key="{{ key }}" data-label="{{ label }}"
+        data-state="{{ state }}" aria-pressed="{{ 'true' if state else 'false' }}"><span class="chip-label">{{ label }}</span></button>
+{%- endmacro %}
+
+{% macro concept_state(slug) -%}{{ 1 if slug in params.include else (2 if slug in params.exclude else 0) }}{%- endmacro %}
+
+{% block content %}
+{% if not configured %}
+<div class="notice">
+  <strong>TMDB anahtarı henüz girilmemiş.</strong> Temaları seçebilirsin ama arama için <code>.env</code> dosyasına
+  <code>TMDB_API_KEY</code> eklemen gerekiyor. Adımlar README dosyasında.
+</div>
+{% endif %}
+
+<section class="hero" aria-labelledby="h-hero">
+  <div class="vip">
+    <div class="vip-main">
+      <p class="vip-date">{{ today_text }}</p>
+      <h1 id="h-hero" class="foil">Bu akşam ne izleyelim?</h1>
+      <p class="vip-lead">Canının çektiği temaları seç. Hepsini en iyi tutturan filmleri IMDb puanı, izleyici yorumları ve Pusula Puanı ile sıralayalım.</p>
+      <dl class="vip-fields">
+        <div><dt>Salon</dt><dd>Senin salonun</dd></div>
+        <div><dt>Seans</dt><dd>Şimdi</dd></div>
+        <div><dt>Temalar</dt><dd>{{ concepts|length }} hazır, binlercesi aranabilir</dd></div>
+      </dl>
+    </div>
+    <div class="vip-stub" aria-hidden="true">
+      <span class="vip-admit">Giriş</span>
+      <span class="vip-no">{{ serial }}</span>
+      {{ barcode() }}
+    </div>
+  </div>
+</section>
+
+<form id="finder" class="finder" action="{{ url_for('main.results') }}" method="get">
+  <section class="block" aria-labelledby="h-mood">
+    <div class="block-head">
+      <h2 id="h-mood">Ruh haline göre başla</h2>
+      <p class="hint">Bir kartı seçince temalar kendiliğinden işaretlenir.</p>
+    </div>
+    <div class="mood-row">
+      {% for m in moods %}
+      <button type="button" class="mood" data-mood='{{ m|tojson }}'>
+        <span class="mood-label">{{ m.label }}</span>
+        <span class="mood-desc">{{ m.desc }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-themes">
+    <div class="block-head">
+      <h2 id="h-themes">Temalar</h2>
+      <p class="hint">Bir dokunuş <span class="hint-in">olsun</span>, iki dokunuş <span class="hint-out">olmasın</span>, üçüncüsü kaldırır.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Tema grupları">
+      <button type="button" role="tab" aria-selected="true" data-tab="populer">Popüler</button>
+      {% for g, title, items in groups %}
+      <button type="button" role="tab" aria-selected="false" data-tab="{{ g }}">{{ title }}</button>
+      {% endfor %}
+    </div>
+    <div class="chips tab-panel" data-panel="populer" role="tabpanel">
+      {% for c in popular %}{{ chip("kw", c.slug, c.label, concept_state(c.slug)|int) }}{% endfor %}
+    </div>
+    {% for g, title, items in groups %}
+    <div class="chips tab-panel" data-panel="{{ g }}" role="tabpanel" hidden>
+      {% for c in items %}{{ chip("kw", c.slug, c.label, concept_state(c.slug)|int) }}{% endfor %}
+    </div>
+    {% endfor %}
+
+    <div class="kw-search">
+      <label for="kw-input">Aradığın tema listede yok mu?</label>
+      <div class="kw-field">
+        <input id="kw-input" type="text" placeholder="Bir konu yaz: robot, mafya, heist, chess…" autocomplete="off"
+               maxlength="40" aria-autocomplete="list" aria-controls="kw-suggest">
+        <div class="kw-suggest" id="kw-suggest" role="listbox" hidden></div>
+      </div>
+      <p class="hint">TMDB'deki binlerce etiket arasında arar; İngilizce yazarsan daha çok sonuç çıkar.</p>
+    </div>
+    <div class="chips" id="custom-chips">
+      {% for c in custom %}{{ chip("kw", c.key, c.label, c.state, "chip-custom") }}{% endfor %}
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-genres">
+    <h2 id="h-genres">Türler</h2>
+    <div class="chips">
+      {% for gid, name in genres.items() %}
+      {{ chip("genre", gid, name, (1 if gid in params.genres else (2 if gid in params.exclude_genres else 0))) }}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="h-tune">
+    <h2 id="h-tune">İnce ayar</h2>
+    <div class="tune-grid">
+      <label>Dönem
+        <select name="donem">{% for v, l in periods %}<option value="{{ v }}" {% if params.period == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      </label>
+      <label>En az puan
+        <select name="puan" id="sel-puan">{% for v, l in ratings %}<option value="{{ v }}" {% if params.min_rating == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      </label>
+      <label>En fazla süre
+        <select name="sure">{% for v, l in runtimes %}<option value="{{ v }}" {% if params.max_runtime == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      </label>
+      <label>Dil
+        <select name="dil">{% for v, l in languages %}<option value="{{ v }}" {% if params.language == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      </label>
+    </div>
+    {% if providers %}
+    <div class="providers">
+      <p class="sub">Sadece abone olduğum platformlarda olanlar</p>
+      <div class="chips">
+        {% for p in providers %}
+        <button type="button" class="chip chip-provider" data-kind="provider" data-two="1" data-key="{{ p.id }}" data-label="{{ p.name }}"
+                data-state="{{ 1 if p.id in params.providers else 0 }}" aria-pressed="{{ 'true' if p.id in params.providers else 'false' }}">
+          {% if p.logo %}<img src="{{ p.logo }}" alt="" width="22" height="22" loading="lazy">{% endif %}<span class="chip-label">{{ p.name }}</span></button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <label class="switch">
+      <input type="checkbox" name="cevher" value="1" {% if params.hidden_gems %}checked{% endif %}>
+      <span class="switch-track" aria-hidden="true"></span>
+      <span>Az bilinen cevherleri de getir</span>
+    </label>
+  </section>
+
+  <div id="hidden-inputs"></div>
+
+  <div class="dock-wrap">
+    <div class="tk tk-dock" id="ticket">
+      <div class="tk-main">
+        <p class="tk-title">Bu akşamın bileti <span class="tk-count" id="ticket-count"></span></p>
+        <p class="tk-sel" id="ticket-sel">Henüz bir şey seçmedin. Boş bırakırsan herkesin sevdiği filmleri getiririz.</p>
+      </div>
+      <div class="tk-stub">
+        <button type="submit" class="btn-velvet" data-go>Film bul</button>
+        <div class="tk-links">
+          <button type="submit" class="btn-text" formaction="{{ url_for('main.surprise') }}" data-go>Sürpriz yap</button>
+          <button type="button" class="btn-text" id="reset">Temizle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import poster %}
+{% block title %}{{ q or 'Film ara' }} — Ne İzlesem?{% endblock %}
+{% block content %}
+<section class="page-text">
+  {% if q %}
+  <h1 class="foil">“{{ q }}”</h1>
+  <p>{% if films %}{{ films|length }} film bulundu. Birine dokun; sayfasında benzerlerini ve temalarını göreceksin.{% else %}Bu adla bir film bulamadık. Türkçe ya da orijinal adını deneyebilirsin.{% endif %}</p>
+  {% else %}
+  <h1 class="foil">Film ara</h1>
+  <p>Beğendiğin bir filmi bul; sayfasında benzerlerini ve temalarını görebilirsin.</p>
+  {% endif %}
+</section>
+{% if films %}
+<ul class="similar-grid search-grid">
+  {% for s in films %}
+  <li style="--i: {{ [loop.index0, 11]|min }}"><a href="{{ url_for('main.movie', movie_id=s.id) }}">{{ poster(s.poster, s.title, "", s.id) }}
+    <span class="similar-title">{{ s.title }}</span>
+    <span class="similar-year">{{ [s.year, s.tmdb and ('TMDB ' ~ (s.tmdb|tr1))]|select|join(', ') }}</span></a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}
