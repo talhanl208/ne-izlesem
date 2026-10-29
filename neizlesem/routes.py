@@ -108,7 +108,25 @@ def results():
     params = SearchParams.from_args(request.args)
     data = _search(params)
     return render_template("results.html", params=params, data=data, sorts=catalog.SORTS,
-                           genres=catalog.GENRES)
+                           genres=catalog.GENRES, labels=_filter_labels(),
+                           provider_names=_provider_names(params.providers))
+
+
+def _filter_labels() -> dict:
+    return {
+        "donem": dict(catalog.PERIODS), "puan": dict(catalog.RATINGS),
+        "sure": dict(catalog.RUNTIMES), "dil": dict(catalog.LANGUAGES),
+    }
+
+
+def _provider_names(ids: list[int]) -> dict:
+    if not ids:
+        return {}
+    _, tmdb, _ = services()
+    try:
+        return {p["provider_id"]: p["provider_name"] for p in tmdb.watch_providers_tr()}
+    except TMDBError:
+        return {}
 
 
 @bp.route("/surpriz")

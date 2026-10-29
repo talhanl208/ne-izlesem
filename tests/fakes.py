@@ -76,6 +76,20 @@ def _make_movies(n: int = 90) -> dict[int, dict]:
 
 MOVIES = _make_movies()
 
+# Az oylu Türk korku filmleri (TMDB'de niş yapımlar genelde birkaç düzine/yüz oy alır)
+for _id, _title, _votes, _avg, _runtime in [
+    (91, "Lanetli Köy", 140, 6.1, 98),
+    (92, "Gece Ziyareti", 38, 5.9, 0),      # TMDB'de süresi girilmemiş
+    (93, "Karanlık Konak", 12, 6.4, 104),
+    (94, "Kısa Korku", 25, 6.0, 14),        # kısa film: listede olmamalı
+]:
+    MOVIES[_id] = {
+        "id": _id, "title": _title, "original_title": _title, "genre_ids": [27, 53],
+        "keywords": {KEYWORDS["ghost"]}, "vote_average": _avg, "vote_count": _votes, "popularity": 20.0 + _id,
+        "release_date": "2019-10-10", "original_language": "tr", "runtime": _runtime,
+        "poster_path": f"/poster{_id}.jpg", "backdrop_path": f"/backdrop{_id}.jpg",
+    }
+
 
 class FakeResponse:
     def __init__(self, data, status: int = 200):
@@ -210,6 +224,10 @@ class FakeSession:
             if mv["vote_average"] < float(p.get("vote_average.gte", 0)):
                 continue
             if p.get("with_original_language") and mv["original_language"] != p["with_original_language"]:
+                continue
+            if "with_runtime.gte" in p and mv["runtime"] < float(p["with_runtime.gte"]):
+                continue
+            if "with_runtime.lte" in p and mv["runtime"] > float(p["with_runtime.lte"]):
                 continue
             gte, lte = p.get("primary_release_date.gte"), p.get("primary_release_date.lte")
             if gte and mv["release_date"] < gte or lte and mv["release_date"] > lte:

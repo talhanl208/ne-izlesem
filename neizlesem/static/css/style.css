@@ -455,6 +455,22 @@ select option { background: #2a111b; color: var(--metin); }
 .sort { display: flex; align-items: center; gap: 12px; color: var(--soluk); }
 .sort select { width: auto; min-width: 180px; }
 
+.sel-filter a { font-weight: 500; font-style: italic; }
+.lowvote {
+  align-self: center; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 500;
+  color: var(--soluk); border: 1px solid var(--cizgi-guclu);
+}
+.tips { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.tips a {
+  display: inline-block; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--cizgi-guclu);
+  color: var(--yaldiz-acik); text-decoration: none; transition: background-color 0.25s, border-color 0.25s;
+}
+.tips a:hover { background: rgba(212, 175, 106, 0.1); border-color: var(--yaldiz); }
+.empty .note { margin: 0 0 22px; }
+.relaxed-note {
+  margin: -6px 0 22px; padding: 12px 16px; border-radius: 12px; font-size: 0.92rem; font-weight: 300;
+  color: var(--soluk); border: 1px dashed var(--cizgi-guclu); background: rgba(212, 175, 106, 0.05);
+}
 .result-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
 .tc {
   --stub: 156px;

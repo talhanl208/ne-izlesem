@@ -117,23 +117,25 @@ GENRES: dict[int, str] = {
     878: "Bilim kurgu", 53: "Gerilim", 10752: "Savaş", 37: "Western",
 }
 
+# Ruh hali kartları yalnızca bir başlangıç noktasıdır: gizli puan filtresi koymazlar ve
+# temaları sadece tanımın kendisi olduğunda ekler (ör. "Beyin yakan" = ters köşe/zaman oyunları).
 MOODS: list[dict] = [
     {"slug": "kafa-dagit", "emoji": "😄", "label": "Kafa dağıtmalık",
-     "desc": "Hafif, eğlenceli, düşündürmeyen", "include": [], "genres": [35, 12], "xgenres": [27], "puan": "6.5"},
+     "desc": "Hafif, eğlenceli, düşündürmeyen", "include": [], "genres": [35, 12], "xgenres": [27]},
     {"slug": "adrenalin", "emoji": "🔥", "label": "Adrenalin",
-     "desc": "Kovalamaca, soygun, bol aksiyon", "include": ["soygun", "araba"], "genres": [28], "xgenres": [], "puan": "6.5"},
+     "desc": "Bol aksiyon, nefes kesen tempo", "include": [], "genres": [28], "xgenres": []},
     {"slug": "beyin-yakan", "emoji": "🤯", "label": "Beyin yakan",
-     "desc": "Ters köşe, zaman oyunları", "include": ["ters-kose", "zaman-dongusu", "paralel-evren"], "genres": [], "xgenres": [], "puan": "7"},
+     "desc": "Ters köşe, zaman oyunları", "include": ["ters-kose", "zaman-dongusu", "paralel-evren"], "genres": [], "xgenres": []},
     {"slug": "gerilim-gecesi", "emoji": "😱", "label": "Gerilim gecesi",
-     "desc": "Diken üstünde oturtan filmler", "include": ["psikolojik"], "genres": [53], "xgenres": [], "puan": "6.5"},
+     "desc": "Diken üstünde oturtan gerilim ve gizem", "include": [], "genres": [53, 9648], "xgenres": []},
     {"slug": "aglamalik", "emoji": "🥲", "label": "İçimi dökeyim",
-     "desc": "Duygusal, yürek burkan", "include": ["yas", "fedakarlik"], "genres": [18], "xgenres": [27], "puan": "7"},
+     "desc": "Duygusal, yürek burkan", "include": ["yas", "fedakarlik"], "genres": [18], "xgenres": [27]},
     {"slug": "romantik", "emoji": "💕", "label": "Romantik akşam",
-     "desc": "Sevgiliyle izlemelik", "include": ["ilk-ask"], "genres": [10749], "xgenres": [27], "puan": "6.5"},
+     "desc": "Sevgiliyle izlemelik", "include": [], "genres": [10749], "xgenres": [27]},
     {"slug": "ilham", "emoji": "✨", "label": "İlham verici",
-     "desc": "Gerçek hikâyeler, ezilenin zaferi", "include": ["gercek-hikaye", "underdog"], "genres": [], "xgenres": [], "puan": "7"},
+     "desc": "Gerçek hikâyeler, ezilenin zaferi", "include": ["gercek-hikaye", "underdog"], "genres": [], "xgenres": []},
     {"slug": "ailecek", "emoji": "🍿", "label": "Ailecek",
-     "desc": "Her yaşa uygun", "include": [], "genres": [10751, 16], "xgenres": [27, 53], "puan": "6.5"},
+     "desc": "Her yaşa uygun", "include": [], "genres": [10751, 16], "xgenres": [27, 53]},
 ]
 
 PERIODS: list[tuple[str, str]] = [

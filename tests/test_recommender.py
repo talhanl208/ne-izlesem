@@ -99,3 +99,44 @@ def test_sort_results_helper():
     assert sort_results(rows, "puan")[0]["pusula"]["score"] == 9
     assert sort_results(rows, "uygun")[0]["rank"] == 0.9
     assert sort_results(rows, "yeni")[0]["release_date"] == "2020"
+
+
+def test_niche_search_falls_back_to_low_vote_films(services):
+    """Türk filmleri + korku: TMDB'de az oy alan yapımlar da gelmeli."""
+    res = _run(services, params(dil="tr", g=["27"]))
+    ids = {r["id"] for r in res["results"]}
+    assert {91, 92, 93} <= ids
+    assert 94 not in ids                    # 14 dakikalık kısa film elenir
+    assert res["relaxed"] is True
+    assert all("Korku" in r["genres"] for r in res["results"])
+
+
+def test_popular_searches_are_not_relaxed(services):
+    res = _run(services, params())
+    assert res["relaxed"] is False
+    assert all(r["id"] < 91 for r in res["results"])
+
+
+def test_moods_have_no_hidden_filters():
+    from neizlesem.catalog import MOODS
+    assert all("puan" not in m for m in MOODS)          # gizli puan eşiği yok
+    romantik = next(m for m in MOODS if m["slug"] == "romantik")
+    assert romantik["include"] == [] and romantik["genres"] == [10749]
+
+
+def test_max_runtime_drops_unknown_and_long_films(services):
+    res = _run(services, params(dil="tr", g=["27"], sure="120"))
+    ids = {r["id"] for r in res["results"]}
+    assert 91 in ids and 93 in ids
+    assert 92 not in ids                                 # süresi bilinmiyor
+    assert all(r["runtime_text"] for r in res["results"])
+
+
+def test_relaxation_counts_results_after_rating_filter(services):
+    # Türk korku + 6 puan: ilk turdaki filmler puan filtresine takılsa bile az oylulara inilir
+    res = _run(services, params(dil="tr", g=["27"], puan="6"))
+    ids = {r["id"] for r in res["results"]}
+    assert {91, 93} <= ids
+    for r in res["results"]:
+        value = r["ratings"]["imdb"] if r["ratings"]["imdb"] is not None else r["ratings"]["tmdb"]
+        assert value >= 6

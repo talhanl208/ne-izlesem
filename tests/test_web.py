@@ -182,3 +182,24 @@ def test_site_is_hidden_from_search_engines(client):
     assert '<meta name="robots" content="noindex, nofollow">' in resp.get_data(as_text=True)
     robots = client.get("/robots.txt")
     assert robots.status_code == 200 and "Disallow: /" in robots.get_data(as_text=True)
+
+
+def test_niche_search_shows_note(client):
+    html = client.get("/sonuclar?dil=tr&g=27").get_data(as_text=True)
+    assert "Lanetli Köy" in html and "Kısa Korku" not in html
+    assert "daha az oy almış filmleri de listeye kattık" in html
+
+
+def test_active_filters_are_visible_and_removable(client):
+    html = client.get("/sonuclar?dil=tr&g=27&puan=6&sure=120").get_data(as_text=True)
+    assert "Türk filmleri" in html and "En az 6+ puan" in html and "Süre ≤ 2 saat" in html
+    assert 'aria-label="Dil filtresini kaldır"' in html
+    assert "az oylu" in html
+
+
+def test_empty_state_offers_one_click_fixes(client):
+    html = client.get("/sonuclar?k=intikam&dil=hi&donem=-1989").get_data(as_text=True)
+    assert "Bu kombinasyona uyan film çıkmadı" in html
+    assert "Dönem filtresini kaldır" in html and "Dil filtresini kaldır" in html
+    assert "Temaları kaldırıp sadece dille ara" in html
+    assert "tema yerine tür seçmek" in html

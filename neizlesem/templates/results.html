@@ -25,7 +25,26 @@
         {% for g in params.exclude_genres %}
         <li class="sel sel-out"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('xg', g|string))|qs }}" data-loading aria-label="{{ genres[g] }} hariç tutmayı kaldır">{{ genres[g] }} olmasın<span class="x" aria-hidden="true">×</span></a></li>
         {% endfor %}
-        {% if not (data.terms or data.genre_terms or data.excluded or params.exclude_genres) %}
+        {% set R = url_for('main.results') %}
+        {% if params.language %}
+        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('dil')|qs }}" data-loading aria-label="Dil filtresini kaldır">{{ labels.dil[params.language] }}<span class="x" aria-hidden="true">×</span></a></li>
+        {% endif %}
+        {% if params.period %}
+        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('donem')|qs }}" data-loading aria-label="Dönem filtresini kaldır">{{ labels.donem[params.period] }}<span class="x" aria-hidden="true">×</span></a></li>
+        {% endif %}
+        {% if params.min_rating %}
+        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('puan')|qs }}" data-loading aria-label="Puan filtresini kaldır">En az {{ labels.puan[params.min_rating] }} puan<span class="x" aria-hidden="true">×</span></a></li>
+        {% endif %}
+        {% if params.max_runtime %}
+        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('sure')|qs }}" data-loading aria-label="Süre filtresini kaldır">Süre {{ labels.sure[params.max_runtime] }}<span class="x" aria-hidden="true">×</span></a></li>
+        {% endif %}
+        {% for pid in params.providers %}
+        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_pairs(drop=('p', pid|string))|qs }}" data-loading aria-label="Platform filtresini kaldır">{{ provider_names.get(pid, 'Platform') }}<span class="x" aria-hidden="true">×</span></a></li>
+        {% endfor %}
+        {% if params.hidden_gems %}
+        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('cevher')|qs }}" data-loading aria-label="Az bilinenler seçeneğini kaldır">Az bilinenler dahil<span class="x" aria-hidden="true">×</span></a></li>
+        {% endif %}
+        {% if not (data.terms or data.genre_terms or data.excluded or params.exclude_genres or params.language or params.period or params.min_rating or params.max_runtime or params.providers) %}
         <li class="sel sel-plain">Tema seçmedin, herkesin sevdiği filmler geliyor</li>
         {% endif %}
       </ul>
@@ -50,13 +69,29 @@
     </label>
     <noscript><button type="submit">Uygula</button></noscript>
   </form>
+  {% if data.relaxed %}
+  <p class="relaxed-note">Bu aramaya uyan popüler film azdı; TMDB'de daha az oy almış filmleri de listeye kattık. Bu filmlerin puanları daha az kişinin oyuna dayanıyor.</p>
+  {% endif %}
   {% endif %}
 </section>
 
 {% if not data.results %}
+{% set R = url_for('main.results') %}
 <section class="empty">
   <h1>Bu kombinasyona uyan film çıkmadı</h1>
-  <p>Bir temayı kaldırmayı, “olmasın” seçimlerini azaltmayı ya da dönem ve puan filtresini gevşetmeyi dene.</p>
+  <p>Az oy almış filmlere kadar her şeye baktık. Şu filtrelerden biri aramayı fazla daraltıyor olabilir:</p>
+  <ul class="tips">
+    {% if params.min_rating %}<li><a href="{{ R }}?{{ params.query_without('puan')|qs }}" data-loading>En az puan filtresini kaldır</a></li>{% endif %}
+    {% if params.period %}<li><a href="{{ R }}?{{ params.query_without('donem')|qs }}" data-loading>Dönem filtresini kaldır</a></li>{% endif %}
+    {% if params.max_runtime %}<li><a href="{{ R }}?{{ params.query_without('sure')|qs }}" data-loading>Süre filtresini kaldır</a></li>{% endif %}
+    {% if params.providers %}<li><a href="{{ R }}?{{ params.query_without('p')|qs }}" data-loading>Platform filtresini kaldır</a></li>{% endif %}
+    {% if params.exclude or params.exclude_genres %}<li><a href="{{ R }}?{{ params.query_without('x', 'xg')|qs }}" data-loading>“Olmasın” seçimlerini kaldır</a></li>{% endif %}
+    {% if params.include and (params.genres or params.language) %}<li><a href="{{ R }}?{{ params.query_without('k')|qs }}" data-loading>Temaları kaldırıp sadece {{ 'tür ve dille' if params.genres and params.language else ('türle' if params.genres else 'dille') }} ara</a></li>{% endif %}
+    {% if params.language %}<li><a href="{{ R }}?{{ params.query_without('dil')|qs }}" data-loading>Dil filtresini kaldır</a></li>{% endif %}
+  </ul>
+  {% if params.language and params.language != 'en' and params.include %}
+  <p class="note">İngilizce dışındaki filmler TMDB'de daha az etiketlenmiş oluyor; bu dillerde tema yerine tür seçmek genelde daha çok sonuç verir.</p>
+  {% endif %}
   <a class="btn-gold" href="{{ url_for('main.index') }}?{{ all_pairs|qs }}">Aramayı düzenle</a>
 </section>
 {% else %}
@@ -71,6 +106,7 @@
           <p class="tc-sub">
             {%- if m.year %}<span>{{ m.year }}</span>{% endif -%}
             {%- if m.original_title and m.original_title != m.title %}<em>{{ m.original_title }}</em>{% endif -%}
+            {%- if m.low_votes %}<b class="lowvote" title="TMDB'de az oy almış; puanı daha az kişiye dayanıyor">az oylu</b>{% endif -%}
           </p>
           <p class="meta">{{ ([m.runtime_text] + m.genres)|select|join(', ') }}{% if m.directors %}. Yönetmen: {{ m.directors|join(', ') }}{% endif %}</p>
           {% if m.match.pct is not none %}
