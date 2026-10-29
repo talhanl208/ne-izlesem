@@ -46,6 +46,7 @@ def _globals():
         "omdb_on": current_app.extensions["neizlesem"]["omdb"].configured,
         "imdb_updated": store.meta_get("imdb_updated"),
         "tmdb_logo": _tmdb_logo(),
+        "allow_indexing": current_app.config.get("ALLOW_INDEXING", False),
     }
 
 
@@ -180,3 +181,12 @@ def keyword_suggest():
 def about():
     from .scoring import WEIGHTS
     return render_template("about.html", weights=WEIGHTS)
+
+
+@bp.route("/robots.txt")
+def robots():
+    if current_app.config.get("ALLOW_INDEXING"):
+        body = "User-agent: *\nAllow: /\n"
+    else:
+        body = "User-agent: *\nDisallow: /\n"
+    return current_app.response_class(body, mimetype="text/plain")

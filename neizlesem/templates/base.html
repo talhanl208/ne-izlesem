@@ -7,6 +7,7 @@
   <meta name="description" content="Canının çektiği temaları seç, sana uyan filmleri puanlarıyla bulalım.">
   <meta name="theme-color" content="#1b0b12">
   <meta name="referrer" content="strict-origin-when-cross-origin">
+  {% if not allow_indexing %}<meta name="robots" content="noindex, nofollow">{% endif %}
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
   <link rel="icon" href="{{ url_for('static', filename='img/icon.svg') }}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/icon-192.png') }}">
@@ -50,7 +51,8 @@
         {% if tmdb_logo %}<img src="{{ tmdb_logo }}" alt="The Movie Database (TMDB)" class="tmdb-logo">{% else %}The Movie Database (TMDB){% endif %}
       </a>
       <p>Film bilgileri, temalar, oyuncular, görseller ve izleyici yorumları TMDB'den gelir. Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmış veya sertifikalandırılmış değildir.</p>
-      <p>IMDb puanları, IMDb'nin kişisel ve ticari olmayan kullanım için yayımladığı veri setinden alınır{% if imdb_updated %} (güncelleme: {{ imdb_updated }}){% endif %}.{% if omdb_on %} Rotten Tomatoes ve Metacritic puanları OMDb üzerinden gelir.{% endif %} Yayın platformu bilgisi: JustWatch.</p>
+      <p>IMDb puanları, IMDb'nin kişisel ve ticari olmayan kullanım için yayımladığı veri setinden alınır{% if imdb_updated %} (güncelleme: {{ imdb_updated }}){% endif %}. <span lang="en" class="imdb-credit">Information courtesy of IMDb (<a href="https://www.imdb.com" rel="noopener noreferrer" target="_blank">https://www.imdb.com</a>). Used with permission.</span></p>
+      <p>{% if omdb_on %}Rotten Tomatoes ve Metacritic puanları OMDb üzerinden gelir. {% endif %}Yayın platformu bilgisi: JustWatch.</p>
     </div>
   </footer>
 

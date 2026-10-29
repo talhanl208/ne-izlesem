@@ -24,6 +24,8 @@ class Config:
     # PythonAnywhere gibi bir vekil sunucunun arkasındaysan 1 yap (gerçek IP'yi okur)
     TRUST_PROXY = os.getenv("TRUST_PROXY", "0") == "1"
     RATE_LIMIT = os.getenv("RATE_LIMIT", "1") == "1"
+    # Kişisel kullanım: arama motorları siteyi listelemesin (IMDb şartlarıyla uyumlu)
+    ALLOW_INDEXING = os.getenv("ALLOW_INDEXING", "0") == "1"
 
     # TMDB: v3 "API Key" ya da v4 "API Read Access Token" (eyJ... ile başlar) — ikisi de olur.
     TMDB_API_KEY = os.getenv("TMDB_API_KEY", "").strip()

@@ -103,6 +103,8 @@ def register(app: Flask) -> None:
         h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         h.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
         h.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        if not app.config.get("ALLOW_INDEXING"):
+            h.setdefault("X-Robots-Tag", "noindex, nofollow")
         if request.is_secure:
             h.setdefault("Strict-Transport-Security", "max-age=31536000")
         if request.endpoint == "static":

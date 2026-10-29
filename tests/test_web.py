@@ -166,3 +166,19 @@ def test_tmdb_logo_used_when_present(app, client):
     finally:
         if not existed:
             logo.unlink()
+
+
+def test_imdb_attribution_on_every_page(client):
+    required = "Information courtesy of IMDb (<a href=\"https://www.imdb.com\""
+    for url in ("/", "/sonuclar?k=intikam", "/film/1", "/nasil-calisir"):
+        html = client.get(url).get_data(as_text=True)
+        assert required in html and "Used with permission." in html
+        assert "bu ürün tmdb api'sini kullanır" in html.lower()
+
+
+def test_site_is_hidden_from_search_engines(client):
+    resp = client.get("/")
+    assert resp.headers["X-Robots-Tag"] == "noindex, nofollow"
+    assert '<meta name="robots" content="noindex, nofollow">' in resp.get_data(as_text=True)
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200 and "Disallow: /" in robots.get_data(as_text=True)

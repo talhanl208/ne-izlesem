@@ -183,4 +183,8 @@ Testler gerçek API'ye gitmez; `tests/fakes.py` içindeki sahte TMDB/OMDb sunucu
 
 ## Yasal not
 
-Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmış veya sertifikalandırılmış değildir. IMDb verileri IMDb'nin [kişisel ve ticari olmayan kullanım](https://developer.imdb.com/non-commercial-datasets/) koşullarıyla kullanılır. Proje ticari amaçla kullanılmamalıdır.
+- **TMDB:** Bu ürün TMDB API'sini kullanır ancak TMDB tarafından onaylanmış veya sertifikalandırılmış değildir. TMDB'nin onaylı logosu (`static/img/tmdb-logo.svg`) değiştirilmeden, yalnızca kaynak göstermek için kullanılır.
+- **IMDb:** Puanlar IMDb'nin [kişisel ve ticari olmayan kullanım](https://developer.imdb.com/non-commercial-datasets/) için yayımladığı veri setinden gelir. Sitede zorunlu atıf cümlesi yer alır: *Information courtesy of IMDb (https://www.imdb.com). Used with permission.* Veri seti repoya eklenmez (`.gitignore`), değiştirilmez ve yeniden dağıtılmaz. Site kişisel kullanım içindir; bu yüzden arama motorlarına kapalıdır (`robots.txt`, `noindex`).
+- **JustWatch:** Türkiye'deki yayın platformu bilgisi JustWatch kaynaklıdır ve sayfada belirtilir.
+- **Markalar:** IMDb, Rotten Tomatoes, Metacritic ve platform adları sahiplerinin markalarıdır; logoları kullanılmaz, adları yalnızca kaynağı belirtmek için yazıyla geçer.
+- **Ticari kullanım yok:** Reklam koymak, ücret almak ya da veriyi satmak TMDB ve IMDb'den ayrı lisans gerektirir.
