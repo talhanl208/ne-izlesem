@@ -10,6 +10,7 @@ import csv
 import gzip
 import os
 import tempfile
+import time
 from datetime import datetime, timezone
 
 from .db import Store
@@ -37,6 +38,7 @@ def import_file(store: Store, path: str, min_votes: int = 100) -> int:
     count = store.imdb_replace(_rows(path, min_votes))
     store.meta_set("imdb_updated", datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"))
     store.meta_set("imdb_count", count)
+    store.meta_set("imdb_updated_ts", time.time())
     return count
 
 

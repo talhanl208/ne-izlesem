@@ -32,6 +32,12 @@ class Config:
 
     DATABASE_PATH = os.getenv("DATABASE_PATH", str(BASE_DIR / "instance" / "neizlesem.db"))
 
+    # Kendi kendine bakım (zamanlanmış görev gerektirmez)
+    AUTO_MAINTENANCE = os.getenv("AUTO_MAINTENANCE", "1") == "1"
+    CACHE_MAX_MB = _int("CACHE_MAX_MB", 150)               # önbellek bu boyutu aşarsa budanır
+    CLEANUP_INTERVAL_HOURS = _int("CLEANUP_INTERVAL_HOURS", 6)
+    IMDB_AUTO_UPDATE_DAYS = _int("IMDB_AUTO_UPDATE_DAYS", 30)  # 0 = otomatik güncelleme kapalı
+
     RESULT_LIMIT = _int("RESULT_LIMIT", 20)        # listede gösterilecek film sayısı
     CANDIDATE_LIMIT = _int("CANDIDATE_LIMIT", 60)  # eşleşme için incelenecek aday sayısı
     MAX_WORKERS = _int("MAX_WORKERS", 8)           # paralel API isteği

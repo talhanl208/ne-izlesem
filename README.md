@@ -60,7 +60,7 @@ cp .env.example .env              # Windows: copy .env.example .env
 
 - **Bir hesapta yalnızca 1 web uygulaması** çalışır. Lezzet Pusulası zaten o hesaptaysa bu siteyi ayrı bir ücretsiz hesapla yayınlaman gerekir (adres `<yeni-kullanici>.pythonanywhere.com` olur) ya da ücretli plana geçersin.
 - **Kullanılmayan web uygulaması 1 ay sonra durur.** Ayda bir giriş yapıp Web sekmesindeki süre uzatma düğmesine bas.
-- **Ocak 2026'dan sonra açılan ücretsiz hesaplarda zamanlanmış görev (Tasks) yok.** IMDb puanlarını ayda bir konsoldan elle güncellemen yeterli (puanlar yavaş değişir). Eski hesabında Tasks sekmesi varsa günlük görev ekleyebilirsin.
+- **Ocak 2026'dan sonra açılan ücretsiz hesaplarda zamanlanmış görev (Tasks) yok.** Sorun değil: site bakımını kendisi yapıyor (aşağıdaki “Kendi kendine bakım” bölümü).
 - Dışarıya yalnızca izinli sitelere istek atılabiliyor: `api.themoviedb.org` ve `datasets.imdbws.com` listede, `omdbapi.com` değil. Yani orada Rotten Tomatoes/Metacritic görünmez (hata da vermez). Görseller ve yazı tipleri ziyaretçinin tarayıcısından yüklendiği için etkilenmez.
 
 Kurulum:
@@ -85,10 +85,29 @@ Kurulum:
    ```
 5. Static files: URL `/static/` → Directory `/home/<kullanici-adin>/ne-izlesem/neizlesem/static`
 6. Web sekmesinde **Force HTTPS** seçeneğini aç ve Reload'a bas.
-7. IMDb puanlarını güncellemek için (ayda bir):
+7. Güncelleme yayınlamak için (GitHub'a gönderdikten sonra):
    ```bash
-   cd ~/ne-izlesem && workon ne-izlesem && flask --app wsgi imdb-guncelle
+   cd ~/ne-izlesem && git pull
    ```
+   ve Web sekmesinde **Reload**.
+
+## Kendi kendine bakım
+
+Elle yapman gereken bir şey yok; site, bir ziyaretçinin isteğine **yanıt verdikten sonra** arada bir kendi bakımını yapar (en sık 10 dakikada bir kontrol eder, kimse beklemez):
+
+| İş | Ne zaman | Ayar (`.env`) |
+|---|---|---|
+| Süresi dolan önbelleği silmek, boşalan yeri diske geri vermek | 6 saatte bir | `CLEANUP_INTERVAL_HOURS` |
+| Önbellek sınırı aşılırsa en eski kayıtları budamak | aynı anda | `CACHE_MAX_MB` (varsayılan 150) |
+| IMDb puanlarını resmi veri setinden yenilemek | 30 günde bir | `IMDB_AUTO_UPDATE_DAYS` (0 = kapalı) |
+
+IMDb indirmesi başarısız olursa eski puanlar korunur ve ertesi gün yeniden denenir. Durumu görmek ya da bakımı hemen çalıştırmak istersen:
+
+```bash
+cd ~/ne-izlesem && workon ne-izlesem && flask --app wsgi bakim
+```
+
+Tek elle yapılacak iş PythonAnywhere'in kendisiyle ilgili: ücretsiz hesapta web uygulamasının süresini ayda bir Web sekmesinden uzatmak.
 
 ## Maliyet
 
@@ -148,6 +167,7 @@ ne-izlesem/
 │   ├── db.py                # SQLite önbellek
 │   ├── routes.py            # sayfalar
 │   ├── security.py          # güvenlik başlıkları + istek sınırlama
+│   ├── maintenance.py       # kendi kendine bakım (önbellek, IMDb güncellemesi)
 │   ├── templates/  static/
 └── tests/                   # sahte API ile uçtan uca testler
 ```
