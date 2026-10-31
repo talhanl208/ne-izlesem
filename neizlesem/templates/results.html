@@ -1,74 +1,79 @@
 {% extends "base.html" %}
-{% from "_macros.html" import poster, rating_row, barcode %}
-{% block title %}Sonuçlar — Ne İzlesem?{% endblock %}
+{% from "_macros.html" import icon %}
+{% block title %}{{ query_title }} — Ne İzlesem?{% endblock %}
 {% block body_class %}page-results{% endblock %}
 
 {% set all_pairs = params.query_pairs() %}
-{% set detail_pairs = [] %}
-{% for k, v in all_pairs %}{% if k in ('k', 'g') %}{% set _ = detail_pairs.append((k, v)) %}{% endif %}{% endfor %}
+{% set R = url_for('main.results') %}
 
 {% block content %}
-<section class="results-head">
-  <div class="tk tk-summary">
-    <div class="tk-main">
-      <p class="tk-title">Aradığın</p>
-      <ul class="sel-list">
-        {% for t in data.terms %}
-        <li class="sel sel-in"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('k', t.key))|qs }}" data-loading aria-label="{{ t.label }} temasını kaldır">{{ t.label }}<span class="x" aria-hidden="true">×</span></a></li>
-        {% endfor %}
-        {% for t in data.genre_terms %}
-        <li class="sel sel-in"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('g', t.ids[0]|string))|qs }}" data-loading aria-label="{{ t.label }} türünü kaldır">{{ t.label }}<span class="x" aria-hidden="true">×</span></a></li>
-        {% endfor %}
-        {% for t in data.excluded %}
-        <li class="sel sel-out"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('x', t.key))|qs }}" data-loading aria-label="{{ t.label }} hariç tutmayı kaldır">{{ t.label }} olmasın<span class="x" aria-hidden="true">×</span></a></li>
-        {% endfor %}
-        {% for g in params.exclude_genres %}
-        <li class="sel sel-out"><a href="{{ url_for('main.results') }}?{{ params.query_pairs(drop=('xg', g|string))|qs }}" data-loading aria-label="{{ genres[g] }} hariç tutmayı kaldır">{{ genres[g] }} olmasın<span class="x" aria-hidden="true">×</span></a></li>
-        {% endfor %}
-        {% set R = url_for('main.results') %}
-        {% if params.language %}
-        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('dil')|qs }}" data-loading aria-label="Dil filtresini kaldır">{{ labels.dil[params.language] }}<span class="x" aria-hidden="true">×</span></a></li>
-        {% endif %}
-        {% if params.period %}
-        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('donem')|qs }}" data-loading aria-label="Dönem filtresini kaldır">{{ labels.donem[params.period] }}<span class="x" aria-hidden="true">×</span></a></li>
-        {% endif %}
-        {% if params.min_rating %}
-        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('puan')|qs }}" data-loading aria-label="Puan filtresini kaldır">En az {{ labels.puan[params.min_rating] }} puan<span class="x" aria-hidden="true">×</span></a></li>
-        {% endif %}
-        {% if params.max_runtime %}
-        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('sure')|qs }}" data-loading aria-label="Süre filtresini kaldır">Süre {{ labels.sure[params.max_runtime] }}<span class="x" aria-hidden="true">×</span></a></li>
-        {% endif %}
-        {% for pid in params.providers %}
-        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_pairs(drop=('p', pid|string))|qs }}" data-loading aria-label="Platform filtresini kaldır">{{ provider_names.get(pid, 'Platform') }}<span class="x" aria-hidden="true">×</span></a></li>
-        {% endfor %}
-        {% if params.hidden_gems %}
-        <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('cevher')|qs }}" data-loading aria-label="Az bilinenler seçeneğini kaldır">Az bilinenler dahil<span class="x" aria-hidden="true">×</span></a></li>
-        {% endif %}
-        {% if not (data.terms or data.genre_terms or data.excluded or params.exclude_genres or params.language or params.period or params.min_rating or params.max_runtime or params.providers) %}
-        <li class="sel sel-plain">Tema seçmedin, herkesin sevdiği filmler geliyor</li>
-        {% endif %}
-      </ul>
-      {% if data.unresolved %}
-      <p class="warn">{{ data.unresolved|join(', ') }} için TMDB'de eşleşen etiket bulunamadı, bu tema aramaya katılmadı.</p>
-      {% endif %}
-    </div>
-    <div class="tk-stub">
-      <a class="btn-velvet" href="{{ url_for('main.surprise') }}?{{ all_pairs|qs }}" data-loading>Sürpriz yap</a>
-      <a class="btn-text" href="{{ url_for('main.index') }}?{{ all_pairs|qs }}">Aramayı düzenle</a>
-    </div>
+<section class="rhead">
+  <h1 class="rhead-title foil">{{ query_title }}</h1>
+
+  <ul class="fchips" aria-label="Arama ölçütleri">
+    {% for t in data.terms %}
+    <li class="sel sel-in"><a href="{{ R }}?{{ params.query_pairs(drop=('k', t.key))|qs }}" data-loading aria-label="{{ t.label }} temasını kaldır">{{ t.label }}<span class="x" aria-hidden="true">×</span></a></li>
+    {% endfor %}
+    {% for t in data.genre_terms %}
+    <li class="sel sel-in"><a href="{{ R }}?{{ params.query_pairs(drop=('g', t.ids[0]|string))|qs }}" data-loading aria-label="{{ t.label }} türünü kaldır">{{ t.label }}<span class="x" aria-hidden="true">×</span></a></li>
+    {% endfor %}
+    {% for t in data.excluded %}
+    <li class="sel sel-out"><a href="{{ R }}?{{ params.query_pairs(drop=('x', t.key))|qs }}" data-loading aria-label="{{ t.label }} hariç tutmayı kaldır">{{ t.label }} olmasın<span class="x" aria-hidden="true">×</span></a></li>
+    {% endfor %}
+    {% for g in params.exclude_genres %}
+    <li class="sel sel-out"><a href="{{ R }}?{{ params.query_pairs(drop=('xg', g|string))|qs }}" data-loading aria-label="{{ genres[g] }} hariç tutmayı kaldır">{{ genres[g] }} olmasın<span class="x" aria-hidden="true">×</span></a></li>
+    {% endfor %}
+    {% if params.language %}
+    <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('dil')|qs }}" data-loading aria-label="Dil filtresini kaldır">{{ labels.dil[params.language] }}<span class="x" aria-hidden="true">×</span></a></li>
+    {% endif %}
+    {% if params.period %}
+    <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('donem')|qs }}" data-loading aria-label="Dönem filtresini kaldır">{{ labels.donem[params.period] }}<span class="x" aria-hidden="true">×</span></a></li>
+    {% endif %}
+    {% if params.min_rating %}
+    <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('puan')|qs }}" data-loading aria-label="Puan filtresini kaldır">En az {{ labels.puan[params.min_rating] }} puan<span class="x" aria-hidden="true">×</span></a></li>
+    {% endif %}
+    {% if params.max_runtime %}
+    <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_without('sure')|qs }}" data-loading aria-label="Süre filtresini kaldır">Süre {{ labels.sure[params.max_runtime] }}<span class="x" aria-hidden="true">×</span></a></li>
+    {% endif %}
+    {% for pid in params.providers %}
+    <li class="sel sel-filter"><a href="{{ R }}?{{ params.query_pairs(drop=('p', pid|string))|qs }}" data-loading aria-label="Platform filtresini kaldır">{{ provider_names.get(pid, 'Platform') }}<span class="x" aria-hidden="true">×</span></a></li>
+    {% endfor %}
+    {% if not (data.terms or data.genre_terms or data.excluded or params.exclude_genres or params.language or params.period or params.min_rating or params.max_runtime or params.providers) %}
+    <li class="sel sel-plain">Tema seçmedin, herkesin sevdiği filmler geliyor</li>
+    {% endif %}
+  </ul>
+  {% if data.unresolved %}
+  <p class="warn">{{ data.unresolved|join(', ') }} için TMDB'de eşleşen etiket bulunamadı, bu tema aramaya katılmadı.</p>
+  {% endif %}
+
+  <div class="rtools">
+    <nav class="seg seg-links" aria-label="Öneri tarzı">
+      {% for key, label, desc in modes %}
+      <a href="{{ R }}?{{ params.query_pairs(tarz=('' if key == 'dengeli' else key), karistir='')|qs }}" data-loading title="{{ desc }}"
+         {% if params.mode == key %}aria-current="true"{% endif %}><span>{{ label }}</span></a>
+      {% endfor %}
+    </nav>
+    {% if data.results %}
+    <a class="btn-ghost" data-shuffle href="{{ R }}?{{ params.query_pairs(karistir=shuffle_seed|string)|qs }}" data-loading title="Aynı aramadan farklı bir karışım">{{ icon("shuffle") }}<span>Karıştır</span></a>
+    <form class="sort" method="get" action="{{ R }}">
+      {% for k, v in all_pairs if k != 'sirala' %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+      <label><span class="visually-hidden">Sırala</span>
+        <select name="sirala" data-autosubmit>
+          {% for v, l in sorts %}<option value="{{ v }}" {% if params.sort == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+      </label>
+      <noscript><button type="submit">Uygula</button></noscript>
+    </form>
+    {% endif %}
+    <span class="rtools-gap"></span>
+    <a class="btn-ghost" href="{{ url_for('main.index') }}?{{ all_pairs|qs }}">{{ icon("edit") }}<span>Aramayı düzenle</span></a>
+    {% if data.results %}<a class="btn-ghost" href="{{ url_for('main.surprise') }}?{{ all_pairs|qs }}" data-loading>{{ icon("dice") }}<span>Sürpriz yap</span></a>{% endif %}
   </div>
 
   {% if data.results %}
-  <form class="sortbar" method="get" action="{{ url_for('main.results') }}">
-    {% for k, v in all_pairs if k != 'sirala' %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
-    <p class="count"><span>{{ data.results|length }}</span> film, {{ data.candidate_count }} aday arasından seçildi</p>
-    <label class="sort">Sırala
-      <select name="sirala" data-autosubmit>
-        {% for v, l in sorts %}<option value="{{ v }}" {% if params.sort == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
-      </select>
-    </label>
-    <noscript><button type="submit">Uygula</button></noscript>
-  </form>
+  <p class="count"><span>{{ data.total }}</span> uygun film bulundu, en uygunları en üstte.
+    <span class="hidden-note" id="hidden-note" hidden><span id="hidden-count"></span> filmi gizledin. <button type="button" class="btn-text" id="toggle-hidden">Göster</button></span>
+  </p>
   {% if data.relaxed %}
   <p class="relaxed-note">Bu aramaya uyan popüler film azdı; TMDB'de daha az oy almış filmleri de listeye kattık. Bu filmlerin puanları daha az kişinin oyuna dayanıyor.</p>
   {% endif %}
@@ -76,9 +81,8 @@
 </section>
 
 {% if not data.results %}
-{% set R = url_for('main.results') %}
 <section class="empty">
-  <h1>Bu kombinasyona uyan film çıkmadı</h1>
+  <h2>Bu kombinasyona uyan film çıkmadı</h2>
   <p>Az oy almış filmlere kadar her şeye baktık. Şu filtrelerden biri aramayı fazla daraltıyor olabilir:</p>
   <ul class="tips">
     {% if params.min_rating %}<li><a href="{{ R }}?{{ params.query_without('puan')|qs }}" data-loading>En az puan filtresini kaldır</a></li>{% endif %}
@@ -95,43 +99,14 @@
   <a class="btn-gold" href="{{ url_for('main.index') }}?{{ all_pairs|qs }}">Aramayı düzenle</a>
 </section>
 {% else %}
-<ol class="result-list">
-  {% for m in data.results %}
-  <li class="tc" style="--i: {{ [loop.index0, 9]|min }}">
-    <a class="tc-link" href="{{ url_for('main.movie', movie_id=m.id) }}{% if detail_pairs %}?{{ detail_pairs|qs }}{% endif %}">
-      <div class="tc-main">
-        {{ poster(m.poster, m.title, "tc-poster", m.id) }}
-        <div class="tc-body">
-          <h2 class="tc-title">{{ m.title }}</h2>
-          <p class="tc-sub">
-            {%- if m.year %}<span>{{ m.year }}</span>{% endif -%}
-            {%- if m.original_title and m.original_title != m.title %}<em>{{ m.original_title }}</em>{% endif -%}
-            {%- if m.low_votes %}<b class="lowvote" title="TMDB'de az oy almış; puanı daha az kişiye dayanıyor">az oylu</b>{% endif -%}
-          </p>
-          <p class="meta">{{ ([m.runtime_text] + m.genres)|select|join(', ') }}{% if m.directors %}. Yönetmen: {{ m.directors|join(', ') }}{% endif %}</p>
-          {% if m.match.pct is not none %}
-          <div class="match">
-            <div class="match-bar" role="img" aria-label="Uygunluk yüzde {{ m.match.pct }}"><span style="--w: {{ m.match.pct }}%"></span></div>
-            <p class="match-pct">Uygunluk %{{ m.match.pct }}</p>
-            <ul class="match-tags">
-              {% for t in m.match.matched %}<li class="hit">{{ t }}</li>{% endfor %}
-              {% for t in m.match.missed %}<li class="miss">{{ t }}</li>{% endfor %}
-            </ul>
-          </div>
-          {% endif %}
-          {% if m.overview %}<p class="overview">{{ m.overview }}</p>{% endif %}
-          {% if m.pros %}<p class="pros">Yorumlarda övülen: {{ m.pros|map('lower_tr')|join(', ') }}</p>{% endif %}
-          {{ rating_row(m.ratings) }}
-        </div>
-      </div>
-      <div class="tc-stub">
-        <span class="tc-rank"><small>Sıra</small>{{ '%02d'|format(loop.index) }}</span>
-        <span class="tc-score {{ m.pusula.score|score_class }}"><b>{{ m.pusula.score|tr1 }}</b><small>Pusula</small></span>
-        {{ barcode() }}
-      </div>
-    </a>
-  </li>
-  {% endfor %}
+<ol class="result-list" id="results">
+  {% include "_cards.html" %}
 </ol>
+{% if more_url %}
+<div class="more">
+  <button type="button" class="btn-more" data-more="{{ more_url }}">Daha fazla göster</button>
+  <p class="more-note" id="more-note">{{ data.total - data.results|length }} uygun film daha var</p>
+</div>
+{% endif %}
 {% endif %}
 {% endblock %}

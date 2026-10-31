@@ -2,17 +2,19 @@
 
 Canın film izlemek istiyor ama aklına bir şey gelmiyor mu? Tür seçmek yetmiyor; bazen “içinde **intikam** geçen bir **soygun** filmi, ama **korku olmasın**” istersin. Ne İzlesem? tam bunu yapıyor:
 
-- **Tema seçerek arama** — 70'e yakın Türkçe tema (intikam, soygun, zaman yolculuğu, ters köşe final, seri katil…) ve TMDB'deki binlerce etiket arasında serbest arama.
+- **Tema seçerek arama** — 85'i aşkın Türkçe tema (intikam, soygun, zaman döngüsü, ters köşe final, yavaş yanan gerilim, güvenilmez anlatıcı, kedi-fare oyunu, neo-noir, folk korku…) ve TMDB'deki binlerce etiket arasında serbest arama.
 - **Çoklu seçim + hariç tutma** — temaya bir dokunuş “olsun”, iki dokunuş “olmasın”. Türler için de aynısı.
-- **Uygunluk yüzdesi** — her film, seçtiğin temaların kaçını gerçekten taşıyor? Hepsini tutturanlar öne çıkar.
+- **Uygunluk yüzdesi** — her film, seçtiğin temaları gerçekten taşıyor mu, yoksa yüzlerce etiketinden biri mi? Temayı konusunun merkezinde taşıyan filmler öne çıkar.
+- **Öneri tarzı** — *Bilinenler* (çok izlenmiş filmler), *Dengeli* (tema uyumu ve kalite önde) ya da *Keşif* (az bilinen, gözden kaçmış filmler).
+- **Hep aynı filmler yok** — benzer filmler (devam filmleri, aynı kalıptan yapımlar) art arda gelmez; **Karıştır** aynı aramadan farklı bir sıralama çıkarır; **Daha fazla göster** listenin devamını getirir; gördüğün filmi **gizle**, bir daha karşına çıkmasın (yalnızca senin tarayıcında tutulur).
 - **Ruh hali kısayolları** — “Beyin yakan”, “Gerilim gecesi”, “Romantik akşam”…
-- **İnce ayar** — dönem, en az puan, en fazla süre, dil, Türkiye'deki platformlar (Netflix, Prime…), az bilinen cevherler.
+- **İnce ayar** — dönem, en az puan, en fazla süre, dil, Türkiye'deki platformlar (Netflix, Prime…).
 - **Orijinal IMDb puanı** + Rotten Tomatoes, Metacritic ve TMDB puanları.
 - **Pusula Puanı** — tüm kaynakları ve izleyici yorumlarını birleştiren, dökümüyle şeffaf kendi puanımız.
 - **Yorum analizi** — izleyici yorumlarından “övülenler / eleştirilenler” (oyunculuk, senaryo, tempo, final…).
 - **Film sayfası** — sohbet havasında Türkçe özet, konu, fragman, nerede izlenir, oyuncular ve bilinen diğer filmleri, temalar, benzer filmler.
 - **Sürpriz yap** — en uygun filmlerden birini rastgele açar.
-- **Gala gecesi tasarımı** — sinema bileti şeklinde kartlar; seçince zımbalanan temalar, “Film bul” deyince koparılan bilet koçanı, kapanan kadife perde ve film geri sayımı, sonuçlarda açılan perde ve sırayla gelen biletler, afişten film sayfasına akan geçiş. Hareket azaltma ayarı açık cihazlarda animasyonlar kendiliğinden kapanır.
+- **Gala gecesi tasarımı, sade hâli** — bu haftanın popüler afişlerinden akan bir duvar ve projektör ışığı; seçtiğin tema altın bir jeton olup alttaki seçim çubuğuna uçar; “Film bul” deyince salonun ışıkları kararır, sonuçlarda yeniden yanar; kartlar kaydırdıkça sırayla gelir ve fareyle hafifçe eğilir; afişten film sayfasına akan geçiş (Chrome, Edge, Safari 18.2+). Hareket azaltma ayarı açık cihazlarda animasyonlar kendiliğinden kapanır.
 - Telefonda ana ekrana eklenebilir.
 
 ## Veri nereden geliyor?
@@ -135,15 +137,28 @@ Kişisel ve ticari olmayan kullanımda hiçbir ücret çıkmaz: TMDB, IMDb veri 
 
 - **Bayes düzeltmesi:** 3 kişinin verdiği 9,5 ile 2 milyon kişinin verdiği 9,0 aynı değildir. Oy sayısı azaldıkça puan genel ortalamaya çekilir (IMDb Top 250'nin de kullandığı yöntem).
 - Eksik kaynakların ağırlığı diğerlerine dağıtılır; yorum sayısı azsa yorumların ağırlığı da düşer.
-- **“En uygun” sıralama** = %60 uygunluk yüzdesi + %40 Pusula Puanı.
+- “En uygun” sıralamada Pusula Puanı, tema uyumunun yanında ikinci ölçüttür (ayrıntısı aşağıda).
 
 ## Öneri motoru nasıl çalışıyor?
 
 1. Seçilen Türkçe temalar TMDB etiket kimliklerine çevrilir (her tema birkaç eş anlamlı etikete bağlı).
-2. TMDB *discover* ile aday toplanır: hepsini içerenler (VE), herhangi birini içerenler (VEYA), en yüksek puanlılar ve her tema için ayrı en iyiler.
-3. Adayların gerçek etiketleri çekilip kaç temayı tuttuğu hesaplanır; “olmasın” denenler elenir.
-4. En iyi adaylar IMDb puanı, eleştirmen puanları ve yorum analiziyle zenginleştirilir.
-5. Seçtiğin ölçüte göre sıralanır. Sonuçlar 6 saat önbellekte kalır.
+2. **Geniş aday havuzu:** TMDB *discover* ile tek bir “en popüler” listesi yerine birçok açıdan aday toplanır: hepsini içerenler (VE), herhangi birini içerenler (VEYA), en çok oylananlar, en yüksek puanlılar, her tema için ayrı en iyiler, farklı on yıllardan filmler ve az bilinen iyi filmler. Az sonuç çıkarsa oy eşiği kademeli düşürülür.
+3. Adayların gerçek etiketleri çekilir; “olmasın” denenler elenir.
+4. **Uygunluk puanı** üç şeye bakar:
+   - *Nadirlik (IDF):* “intikam” gibi binlerce filmde geçen bir temayı tutturmak, nadir bir temayı tutturmaktan daha az değerlidir.
+   - *Merkezilik (BM25 uzunluk düzeltmesi):* 40 etiketli bir gişe filminin “intikam” etiketi taşıması ile 8 etiketli bir filmin konusunun intikam olması aynı şey değildir. Az ve odaklı etiketli film daha yüksek puan alır.
+   - *Konu metni:* TMDB'deki Türkçe özetinde temanın kendisi geçiyorsa (ör. “öcünü almak”) tema konunun merkezinde sayılır.
+5. **Sıralama** öneri tarzına göre değişir:
+
+   | Tarz | Ağırlıklar |
+   |---|---|
+   | Bilinenler | %50 uygunluk + %30 Pusula + %20 ünlülük |
+   | Dengeli (varsayılan) | %60 uygunluk + %40 Pusula, çok ünlü filmlere küçük ceza |
+   | Keşif | %62 uygunluk + %30 Pusula, ünlülük arttıkça ceza |
+
+6. **Çeşitlilik (MMR):** Sıralama yapılırken her yeni film, listede zaten olan filmlere ne kadar benzediğine göre (ortak etiketler, türler) geri itilir. Böylece bir devam filmi serisi ya da aynı kalıptan beş film art arda gelmez.
+7. **Karıştır** uygun filmlerin sırasına küçük ve kontrollü bir rastgelelik katar (Gumbel gürültüsü): en uygunlar yine üstte kalır ama her seferinde aynı ilk 16 gelmez.
+8. Sonuçlar sayfa sayfa gelir (**Daha fazla göster**), en iyi adaylar IMDb puanı, eleştirmen puanları ve yorum analiziyle zenginleştirilir. Aday havuzu 6 saat önbellekte kalır; karıştırmak ve sayfalamak havuzu baştan toplamaz, yalnızca yeni gelen filmlerin ayrıntıları çekilir.
 
 Yorum analizi kural tabanlıdır (olumlu/olumsuz kelime sözlüğü, olumsuzlama “not good”, pekiştirme “very”, “but” sonrası vurgu); hiçbir yapay zekâ servisine veri gönderilmez.
 

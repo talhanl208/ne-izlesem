@@ -20,7 +20,7 @@ for _c in CONCEPTS.values():
         if _name not in KEYWORDS:
             KEYWORDS[_name] = _next
             _next += 1
-KEYWORDS.update({"chess": 9001, "chess player": 9002, "aftercreditsstinger": 9003})
+KEYWORDS.update({"chess": 9001, "chess player": 9002, "aftercreditsstinger": 9003, "sequel": 9004})
 KW_NAMES = {v: k for k, v in KEYWORDS.items()}
 
 REVENGE, HEIST, TIME_TRAVEL = KEYWORDS["revenge"], KEYWORDS["heist"], KEYWORDS["time travel"]
@@ -76,6 +76,28 @@ def _make_movies(n: int = 90) -> dict[int, dict]:
 
 MOVIES = _make_movies()
 
+# Her temada eşleşen dev gişe filmi: 40 etiket (intikam ve soygun da içinde), çok popüler.
+_pool = [k for k in KEYWORDS.values() if k not in (REVENGE, HEIST)]
+MOVIES[95] = {
+    "id": 95, "title": "Gişe Canavarı", "original_title": "Box Office Monster", "genre_ids": [28, 12],
+    "keywords": {REVENGE, HEIST, *_pool[:38]}, "vote_average": 8.0, "vote_count": 60000, "popularity": 950.0,
+    "release_date": "2021-05-05", "original_language": "en", "runtime": 150,
+    "poster_path": "/poster95.jpg", "backdrop_path": "/backdrop95.jpg",
+}
+# "İntikam Soygunu"nun devam filmi: neredeyse aynı etiketler (çeşitlendirme testi için)
+MOVIES[96] = dict(MOVIES[1], id=96, title="İntikam Soygunu 2", original_title="Test Movie 96",
+                  keywords=set(MOVIES[1]["keywords"]) | {KEYWORDS["sequel"]}, vote_average=8.3,
+                  vote_count=24000, popularity=390.0, release_date="2022-03-03",
+                  poster_path="/poster96.jpg", backdrop_path="/backdrop96.jpg")
+# Konusunda intikam geçen, az bilinen bir film (konu metni bonusu ve keşif modu testi)
+MOVIES[97] = {
+    "id": 97, "title": "Sessiz Hesap", "original_title": "Quiet Score", "genre_ids": [18, 53],
+    "keywords": {REVENGE}, "vote_average": 7.6, "vote_count": 420, "popularity": 15.0,
+    "release_date": "2008-02-02", "original_language": "en", "runtime": 101,
+    "poster_path": "/poster97.jpg", "backdrop_path": "/backdrop97.jpg",
+    "overview": "Ailesini kaybeden bir adamın sessiz intikamı.",
+}
+
 # Az oylu Türk korku filmleri (TMDB'de niş yapımlar genelde birkaç düzine/yüz oy alır)
 for _id, _title, _votes, _avg, _runtime in [
     (91, "Lanetli Köy", 140, 6.1, 98),
@@ -114,9 +136,10 @@ class FakeResponse:
 
 
 def _summary(m: dict, lang: str = "tr") -> dict:
+    overview = m.get("overview") or (f"{m['title']} için Türkçe özet." if m["id"] % 5 else "")
     return {k: m[k] for k in ("id", "title", "original_title", "genre_ids", "vote_average", "vote_count",
                               "popularity", "release_date", "original_language", "poster_path", "backdrop_path")} | {
-        "overview": f"{m['title']} için Türkçe özet." if lang == "tr" and m["id"] % 5 else ""}
+        "overview": overview if lang == "tr" else ""}
 
 
 def _ids(value: str | None) -> tuple[set[int], str]:
@@ -191,6 +214,8 @@ class FakeSession:
             for c, mv_id in zip(cast, range(5, 12)):
                 c["vote_count"] = 1000 + pid + mv_id
             return FakeResponse({"cast": cast, "crew": []})
+        if path == "/trending/movie/week":
+            return FakeResponse({"results": [_summary(mv) for mv in list(MOVIES.values())[:20]]})
         if path == "/watch/providers/movie":
             return FakeResponse({"results": [
                 {"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.jpg", "display_priorities": {"TR": 1}},

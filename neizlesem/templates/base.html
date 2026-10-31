@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Ne İzlesem?{% endblock %}</title>
   <meta name="description" content="Canının çektiği temaları seç, sana uyan filmleri puanlarıyla bulalım.">
-  <meta name="theme-color" content="#1b0b12">
+  <meta name="theme-color" content="#150810">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   {% if not allow_indexing %}<meta name="robots" content="noindex, nofollow">{% endif %}
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
@@ -38,6 +38,7 @@
     </form>
   </header>
 
+  {% block hero %}{% endblock %}
   <main id="icerik">{% block content %}{% endblock %}</main>
 
   <footer class="footer">
@@ -56,23 +57,16 @@
     </div>
   </footer>
 
-  {# Perde: arama sonucu gelince açılır #}
-  <div class="curtain curtain-intro" aria-hidden="true">
-    <div class="curtain-panel curtain-left"></div>
-    <div class="curtain-panel curtain-right"></div>
-  </div>
+  {# Sonuç sayfası açılırken: ışıklar yavaşça yanar #}
+  <div class="house-intro" aria-hidden="true"></div>
 
-  {# Yükleniyor: perde kapanır, film geri sayımı döner #}
-  <div class="loading" id="loading" hidden role="status" aria-live="polite">
-    <div class="curtain-panel curtain-left"></div>
-    <div class="curtain-panel curtain-right"></div>
-    <div class="valance" aria-hidden="true"></div>
-    <div class="loading-center">
-      <div class="leader" aria-hidden="true">
-        <span class="leader-sweep"></span>
-        <span class="leader-num">3</span>
-      </div>
-      <p class="loading-text">Film arşivi taranıyor…</p>
+  {# Arama sırasında: salonun ışıkları kararır, projektör yanar #}
+  <div class="house" id="loading" hidden role="status" aria-live="polite">
+    <div class="house-dark"></div>
+    <div class="house-beam" aria-hidden="true"></div>
+    <div class="house-center">
+      <p class="house-text">Salon kararıyor…</p>
+      <span class="house-line" aria-hidden="true"></span>
     </div>
   </div>
 

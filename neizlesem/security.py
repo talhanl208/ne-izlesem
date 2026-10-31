@@ -31,6 +31,7 @@ CSP = "; ".join([
 # uç nokta → (istek sayısı, saniye)
 LIMITS = {
     "main.results": (30, 60),
+    "main.results_more": (60, 60),
     "main.surprise": (30, 60),
     "main.movie": (90, 60),
     "main.search": (40, 60),

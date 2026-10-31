@@ -1,10 +1,12 @@
-/* Sayfa çizilmeden önce çalışır: aramadan gelindiyse perde açılış animasyonunu hazırlar. */
+/* Sayfa çizilmeden önce çalışır: JS sınıfını koyar; aramadan gelindiyse "ışıklar yanar" girişini hazırlar. */
 (function () {
+  var root = document.documentElement;
+  root.classList.add("js");
   try {
-    if (sessionStorage.getItem("ni-perde") === "1") {
-      sessionStorage.removeItem("ni-perde");
+    if (sessionStorage.getItem("ni-isik") === "1") {
+      sessionStorage.removeItem("ni-isik");
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        document.documentElement.classList.add("with-curtain");
+        root.classList.add("with-lights");
       }
     }
   } catch (e) { /* gizli sekme vb. */ }

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% from "_macros.html" import poster, barcode %}
+{% from "_macros.html" import poster %}
 {% block title %}{{ d.title }}{% if d.year %} ({{ d.year }}){% endif %} — Ne İzlesem?{% endblock %}
 {% block body_class %}page-detail{% endblock %}
 
-{% block content %}
+{% block hero %}
 <section class="film-hero" {% if d.backdrop %}style="--backdrop: url('{{ d.backdrop }}')"{% endif %}>
   <div class="film-hero-inner">
     {% if back %}<a class="back" href="{{ back }}"><span aria-hidden="true">‹</span> Sonuçlara dön</a>{% endif %}
@@ -25,7 +25,9 @@
     </div>
   </div>
 </section>
+{% endblock %}
 
+{% block content %}
 <div class="film-layout">
   <div class="film-main">
     <section class="sec story" aria-labelledby="h-story">
@@ -130,17 +132,17 @@
   </div>
 
   <aside class="film-side">
-    <section class="tk tk-vertical scorecard" aria-labelledby="h-score">
-      <div class="tk-main">
-        <h2 id="h-score" class="tk-title">Pusula Puanı</h2>
+    <section class="scorecard" aria-labelledby="h-score">
+      <div class="score-top">
+        <h2 id="h-score" class="score-name">Pusula Puanı</h2>
         <p class="score-big {{ d.pusula.score|score_class }}">
           <span class="score-big-num" data-count="{{ d.pusula.score if d.pusula.score is not none else '' }}">{{ d.pusula.score|tr1 }}</span><span class="score-big-of">/10</span>
         </p>
         <p class="verdict">{{ d.verdict }}</p>
         <p class="confidence">Güven: {{ d.pusula.confidence|lower_tr }}</p>
       </div>
-      <div class="tk-stub">
-        <dl class="tk-fields">
+      <div class="score-bottom">
+        <dl class="score-fields">
           <div><dt>IMDb</dt><dd>{{ d.ratings.imdb|tr1 }}<small>{% if d.ratings.imdb_votes_text %}{{ d.ratings.imdb_votes_text }} oy{% else %}veri yok{% endif %}</small></dd></div>
           <div><dt>TMDB</dt><dd>{{ d.ratings.tmdb|tr1 if d.ratings.tmdb else '—' }}<small>{% if d.ratings.tmdb_votes_text %}{{ d.ratings.tmdb_votes_text }} oy{% else %}veri yok{% endif %}</small></dd></div>
           {% if d.ratings.rt is not none %}<div><dt>Rotten Tomatoes</dt><dd>%{{ d.ratings.rt }}<small>eleştirmen</small></dd></div>{% endif %}
@@ -161,7 +163,6 @@
           <a href="{{ url_for('main.about') }}">Yöntemin ayrıntısı</a>
         </details>
         {% endif %}
-        {{ barcode() }}
       </div>
     </section>
 

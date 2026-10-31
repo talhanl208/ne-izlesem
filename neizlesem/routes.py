@@ -9,7 +9,7 @@ from flask import Blueprint, abort, current_app, jsonify, redirect, render_templ
 from . import catalog
 from .movie import build_detail
 from .recommender import SearchParams, Term, genre_terms, resolve_terms, run_search, surprise_pick
-from .textutil import lower_tr, ticket_serial, today_tr, year_of
+from .textutil import join_tr, lower_tr, today_tr, year_of
 from .tmdb import TMDBClient, TMDBError, TMDBNotConfigured
 
 bp = Blueprint("main", __name__)
@@ -91,25 +91,80 @@ def index():
         custom=custom,
         configured=tmdb.configured,
         today_text=today_tr(),
-        serial=ticket_serial(),
+        wall=_poster_wall(tmdb),
+        modes=catalog.MODES,
     )
 
 
-def _search(params: SearchParams) -> dict:
+def _poster_wall(tmdb: TMDBClient) -> list[list[dict]]:
+    """Ana sayfadaki afiş duvarı: bu haftanın gündemindeki filmler, 3 sıra."""
+    if not tmdb.configured:
+        return []
+    try:
+        films = [f for f in tmdb.trending_week() if f.get("poster_path")][:24]
+    except TMDBError:
+        return []
+    posters = [{"src": TMDBClient.image(f["poster_path"], "w154"), "title": f.get("title") or ""} for f in films]
+    if len(posters) < 9:
+        return []
+    third = len(posters) // 3
+    return [posters[:third], posters[third:2 * third], posters[2 * third:]]
+
+
+def _search(params: SearchParams, cursor: int = 0) -> dict:
     store, tmdb, omdb = services()
     cfg = current_app.config
     return run_search(params, tmdb, omdb, store,
                       result_limit=cfg["RESULT_LIMIT"], candidate_limit=cfg["CANDIDATE_LIMIT"],
-                      workers=cfg["MAX_WORKERS"])
+                      workers=cfg["MAX_WORKERS"], cursor=cursor)
+
+
+def _int_arg(name: str, default: int = 0, upper: int = 10_000) -> int:
+    raw = (request.args.get(name) or "").strip()
+    return min(int(raw), upper) if raw.isdigit() else default
+
+
+def _query_title(data: dict, params: SearchParams, labels: dict) -> str:
+    parts = [t["label"] for t in data["terms"]] + [t["label"] for t in data["genre_terms"]]
+    if not parts:
+        return labels["dil"][params.language] if params.language else "Herkesin sevdiği filmler"
+    text = join_tr([parts[0]] + [lower_tr(x) for x in parts[1:]])
+    return text[:1].upper() + text[1:]
+
+
+def _more_url(params: SearchParams, data: dict, shown: int) -> str | None:
+    if data["next_cursor"] is None:
+        return None
+    pairs = params.query_pairs() + [("imlec", str(data["next_cursor"])), ("basla", str(shown))]
+    return url_for("main.results_more") + "?" + urlencode(pairs)
 
 
 @bp.route("/sonuclar")
 def results():
     params = SearchParams.from_args(request.args)
     data = _search(params)
+    labels = _filter_labels()
+    shown = len(data["results"])
     return render_template("results.html", params=params, data=data, sorts=catalog.SORTS,
-                           genres=catalog.GENRES, labels=_filter_labels(),
-                           provider_names=_provider_names(params.providers))
+                           genres=catalog.GENRES, labels=labels, modes=catalog.MODES,
+                           provider_names=_provider_names(params.providers),
+                           query_title=_query_title(data, params, labels),
+                           more_url=_more_url(params, data, shown), start=0,
+                           detail_pairs=[(k, v) for k, v in params.query_pairs() if k in ("k", "g")],
+                           shuffle_seed=(params.seed % 997) + 1)
+
+
+@bp.route("/sonuclar/devam")
+def results_more():
+    """'Daha fazla göster': sonraki sayfanın kartlarını HTML parçası olarak döndürür."""
+    params = SearchParams.from_args(request.args)
+    data = _search(params, cursor=_int_arg("imlec"))
+    start = _int_arg("basla")
+    shown = start + len(data["results"])
+    html = render_template("_cards.html", data=data, start=start, params=params,
+                           detail_pairs=[(k, v) for k, v in params.query_pairs() if k in ("k", "g")])
+    return jsonify({"html": html, "next": _more_url(params, data, shown), "shown": shown,
+                    "total": data["total"]})
 
 
 def _filter_labels() -> dict:

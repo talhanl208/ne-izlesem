@@ -79,6 +79,7 @@ def build_card(tr: dict, en: dict, store: Store, omdb: OMDbClient | None) -> dic
         "genres": _genres(tr),
         "poster": TMDBClient.image(tr.get("poster_path"), "w342"),
         "backdrop": TMDBClient.image(tr.get("backdrop_path"), "w780"),
+        "backdrop_small": TMDBClient.image(tr.get("backdrop_path"), "w300"),
         "overview": clamp_text(overview, 230),
         "overview_lang": lang,
         "popularity": tr.get("popularity") or 0,

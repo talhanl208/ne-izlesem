@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import barcode %}
+{% from "_macros.html" import icon %}
 {% block body_class %}page-home{% endblock %}
 
 {% macro chip(kind, key, label, state=0, extra="") -%}
@@ -9,6 +9,26 @@
 
 {% macro concept_state(slug) -%}{{ 1 if slug in params.include else (2 if slug in params.exclude else 0) }}{%- endmacro %}
 
+{% block hero %}
+<section class="hero" aria-labelledby="h-hero">
+  {% if wall %}
+  <div class="wall" aria-hidden="true">
+    {% for row in wall %}
+    <div class="wall-row">
+      {% for _ in range(2) %}{% for p in row %}<img src="{{ p.src }}" alt="" loading="eager" decoding="async">{% endfor %}{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="beam" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <p class="hero-date">{{ today_text }}</p>
+    <h1 id="h-hero" class="foil">Bu akşam ne izleyelim?</h1>
+    <p class="hero-lead">Canının çektiği temaları seç. Hepsini en iyi tutturan filmleri IMDb puanı, izleyici yorumları ve Pusula Puanı ile sıralayalım.</p>
+  </div>
+</section>
+{% endblock %}
+
 {% block content %}
 {% if not configured %}
 <div class="notice">
@@ -17,32 +37,9 @@
 </div>
 {% endif %}
 
-<section class="hero" aria-labelledby="h-hero">
-  <div class="vip">
-    <div class="vip-main">
-      <p class="vip-date">{{ today_text }}</p>
-      <h1 id="h-hero" class="foil">Bu akşam ne izleyelim?</h1>
-      <p class="vip-lead">Canının çektiği temaları seç. Hepsini en iyi tutturan filmleri IMDb puanı, izleyici yorumları ve Pusula Puanı ile sıralayalım.</p>
-      <dl class="vip-fields">
-        <div><dt>Salon</dt><dd>Senin salonun</dd></div>
-        <div><dt>Seans</dt><dd>Şimdi</dd></div>
-        <div><dt>Temalar</dt><dd>{{ concepts|length }} hazır, binlercesi aranabilir</dd></div>
-      </dl>
-    </div>
-    <div class="vip-stub" aria-hidden="true">
-      <span class="vip-admit">Giriş</span>
-      <span class="vip-no">{{ serial }}</span>
-      {{ barcode() }}
-    </div>
-  </div>
-</section>
-
 <form id="finder" class="finder" action="{{ url_for('main.results') }}" method="get">
-  <section class="block" aria-labelledby="h-mood">
-    <div class="block-head">
-      <h2 id="h-mood">Ruh haline göre başla</h2>
-      <p class="hint">Bir kartı seçince temalar kendiliğinden işaretlenir.</p>
-    </div>
+  <section class="block block-moods" aria-labelledby="h-mood">
+    <h2 id="h-mood">Ruh haline göre başla</h2>
     <div class="mood-row">
       {% for m in moods %}
       <button type="button" class="mood" data-mood='{{ m|tojson }}'>
@@ -59,7 +56,7 @@
       <p class="hint">Bir dokunuş <span class="hint-in">olsun</span>, iki dokunuş <span class="hint-out">olmasın</span>, üçüncüsü kaldırır.</p>
     </div>
     <div class="tabs" role="tablist" aria-label="Tema grupları">
-      <button type="button" role="tab" aria-selected="true" data-tab="populer">Popüler</button>
+      <button type="button" role="tab" aria-selected="true" data-tab="populer">Öne çıkanlar</button>
       {% for g, title, items in groups %}
       <button type="button" role="tab" aria-selected="false" data-tab="{{ g }}">{{ title }}</button>
       {% endfor %}
@@ -76,7 +73,7 @@
     <div class="kw-search">
       <label for="kw-input">Aradığın tema listede yok mu?</label>
       <div class="kw-field">
-        <input id="kw-input" type="text" placeholder="Bir konu yaz: robot, mafya, heist, chess…" autocomplete="off"
+        <input id="kw-input" type="text" placeholder="Bir konu yaz: satranç, robot, heist, chess…" autocomplete="off"
                maxlength="40" aria-autocomplete="list" aria-controls="kw-suggest">
         <div class="kw-suggest" id="kw-suggest" role="listbox" hidden></div>
       </div>
@@ -98,6 +95,18 @@
 
   <section class="block" aria-labelledby="h-tune">
     <h2 id="h-tune">İnce ayar</h2>
+    <fieldset class="seg-field">
+      <legend>Öneri tarzı</legend>
+      <div class="seg" role="radiogroup">
+        {% for key, label, desc in modes %}
+        <label class="seg-opt">
+          <input type="radio" name="tarz" value="{{ key }}" data-desc="{{ desc }}" {% if params.mode == key %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <p class="seg-desc" id="seg-desc">{% for key, label, desc in modes %}{% if params.mode == key %}{{ desc }}{% endif %}{% endfor %}</p>
+    </fieldset>
     <div class="tune-grid">
       <label>Dönem
         <select name="donem">{% for v, l in periods %}<option value="{{ v }}" {% if params.period == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
@@ -124,28 +133,17 @@
       </div>
     </div>
     {% endif %}
-    <label class="switch">
-      <input type="checkbox" name="cevher" value="1" {% if params.hidden_gems %}checked{% endif %}>
-      <span class="switch-track" aria-hidden="true"></span>
-      <span>Az bilinen cevherleri de getir</span>
-    </label>
   </section>
 
   <div id="hidden-inputs"></div>
 
-  <div class="dock-wrap">
-    <div class="tk tk-dock" id="ticket">
-      <div class="tk-main">
-        <p class="tk-title">Bu akşamın bileti <span class="tk-count" id="ticket-count"></span></p>
-        <p class="tk-sel" id="ticket-sel">Henüz bir şey seçmedin. Boş bırakırsan herkesin sevdiği filmleri getiririz.</p>
-      </div>
-      <div class="tk-stub">
-        <button type="submit" class="btn-velvet" data-go>Film bul</button>
-        <div class="tk-links">
-          <button type="submit" class="btn-text" formaction="{{ url_for('main.surprise') }}" data-go>Sürpriz yap</button>
-          <button type="button" class="btn-text" id="reset">Temizle</button>
-        </div>
-      </div>
+  <div class="selbar-wrap">
+    <div class="selbar" id="ticket">
+      <span class="sel-count" id="ticket-count" aria-live="polite">0</span>
+      <p class="sel-text" id="ticket-sel">Tema seçebilir ya da direkt arayabilirsin.</p>
+      <button type="button" class="btn-icon" id="reset" aria-label="Seçimleri temizle" title="Temizle">{{ icon("close") }}</button>
+      <button type="submit" class="btn-icon btn-icon-text" formaction="{{ url_for('main.surprise') }}" data-go title="Uygun filmlerden birini rastgele aç">{{ icon("dice") }}<span>Sürpriz yap</span></button>
+      <button type="submit" class="btn-gold" data-go>Film bul</button>
     </div>
   </div>
 </form>

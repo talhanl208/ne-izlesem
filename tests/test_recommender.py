@@ -75,7 +75,8 @@ def test_search_is_cached(services, fake_session):
     _run(services, p)
     before = len(fake_session.calls)
     again = _run(services, params(k=["intikam", "soygun"], sirala="yeni"))
-    assert len(fake_session.calls) == before  # ikinci arama tamamen önbellekten
+    new_calls = [url for url, _ in fake_session.calls[before:]]
+    assert not [u for u in new_calls if "/discover/" in u or "/keywords" in u]  # havuz önbellekten
     dates = [r["release_date"] for r in again["results"]]
     assert dates == sorted(dates, reverse=True)
 
@@ -114,7 +115,7 @@ def test_niche_search_falls_back_to_low_vote_films(services):
 def test_popular_searches_are_not_relaxed(services):
     res = _run(services, params())
     assert res["relaxed"] is False
-    assert all(r["id"] < 91 for r in res["results"])
+    assert not {91, 92, 93, 94} & {r["id"] for r in res["results"]}
 
 
 def test_moods_have_no_hidden_filters():
@@ -140,3 +141,76 @@ def test_relaxation_counts_results_after_rating_filter(services):
     for r in res["results"]:
         value = r["ratings"]["imdb"] if r["ratings"]["imdb"] is not None else r["ratings"]["tmdb"]
         assert value >= 6
+
+
+
+# ---------------------------------------------------------------- yeni motor
+
+from neizlesem.recommender import centrality, run_search  # noqa: E402
+
+
+def _page(services, p, cursor=0, limit=16):
+    return run_search(p, services["tmdb"], services["omdb"], services["store"],
+                      result_limit=limit, workers=4, cursor=cursor)
+
+
+def test_blockbuster_with_many_keywords_does_not_dominate(services):
+    """40 etiketli gişe filmi her temaya uyar; ama tema onun merkezinde değil."""
+    ids = [r["id"] for r in _run(services, params(k=["intikam", "soygun"]))["results"]]
+    assert ids.index(1) < ids.index(95)
+    assert centrality(3, 10) > centrality(40, 10)
+
+
+def test_story_mention_and_discovery_mode(services):
+    populer = [r["id"] for r in _run(services, params(k=["intikam"], tarz="populer"))["results"]]
+    kesif = [r["id"] for r in _run(services, params(k=["intikam"], tarz="kesif"))["results"]]
+    assert 97 in kesif and 97 in populer
+    assert kesif.index(97) < populer.index(97)   # az bilinen, konusu tam intikam
+    card = next(r for r in _run(services, params(k=["intikam"]))["results"] if r["id"] == 97)
+    assert card["story"] == ["İntikam"]          # konusunda da geçiyor
+
+
+def test_discovery_mode_prefers_less_known(services):
+    def avg_votes(res):
+        top = res["results"][:8]
+        return sum(r["ratings"]["tmdb_votes"] or 0 for r in top) / len(top)
+    populer = _run(services, params(g=["28"], tarz="populer"))
+    kesif = _run(services, params(g=["28"], tarz="kesif"))
+    assert avg_votes(kesif) < avg_votes(populer)
+
+
+def test_pagination_has_no_duplicates(services):
+    p = params(g=["28"])
+    first = _page(services, p, limit=6)
+    assert first["next_cursor"] is not None and first["total"] > 6
+    second = _page(services, p, cursor=first["next_cursor"], limit=6)
+    a, b = {r["id"] for r in first["results"]}, {r["id"] for r in second["results"]}
+    assert len(a) == 6 and len(b) == 6 and not a & b
+
+
+def test_sequels_are_not_shown_back_to_back(services):
+    ids = [r["id"] for r in _run(services, params(k=["intikam", "soygun"]))["results"]]
+    assert 1 in ids and 96 in ids
+    assert abs(ids.index(1) - ids.index(96)) > 1
+
+
+def test_shuffle_changes_order_but_keeps_relevance(services):
+    base = [r["id"] for r in _page(services, params(g=["28"]), limit=10)["results"]]
+    again = [r["id"] for r in _page(services, params(g=["28"]), limit=10)["results"]]
+    shuffled = [r["id"] for r in _page(services, params(g=["28"], karistir="7"), limit=10)["results"]]
+    assert base == again                         # karıştırmadan sonuç kararlı
+    assert shuffled != base
+    assert len(set(shuffled) & set(base)) >= 4   # yine de iyi filmler büyük ölçüde aynı
+
+
+def test_rare_theme_weighs_more():
+    from neizlesem.recommender import term_weights, Term
+    terms = [Term("a", "A", "", [1]), Term("b", "B", "", [2])]
+    w = term_weights(terms, {"a": 5000, "b": 40})
+    assert w["b"] > w["a"]
+
+
+def test_old_hidden_gems_link_maps_to_discovery():
+    assert params(cevher="1").mode == "kesif"
+    assert params(tarz="populer").mode == "populer"
+    assert params(tarz="bozuk").mode == "dengeli"

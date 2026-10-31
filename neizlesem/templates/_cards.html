@@ -1,0 +1,35 @@
+{% from "_macros.html" import poster, rating_row, icon %}
+{% for m in data.results %}
+<li class="tc" data-id="{{ m.id }}" style="--i: {{ [loop.index0, 9]|min }};{% if m.backdrop_small %} --bd: url('{{ m.backdrop_small }}');{% endif %}">
+  <article class="tc-card">
+    {{ poster(m.poster, m.title, "tc-poster", m.id) }}
+    <div class="tc-body">
+      <h2 class="tc-title"><a class="tc-link" href="{{ url_for('main.movie', movie_id=m.id) }}{% if detail_pairs %}?{{ detail_pairs|qs }}{% endif %}">{{ m.title }}</a></h2>
+      <p class="tc-sub">
+        {%- if m.year %}<span class="tc-year">{{ m.year }}</span>{% endif -%}
+        {%- if m.original_title and m.original_title != m.title %}<em>{{ m.original_title }}</em>{% endif -%}
+        {%- if m.low_votes %}<b class="lowvote" title="TMDB'de az oy almış; puanı daha az kişiye dayanıyor">az oylu</b>{% endif -%}
+      </p>
+      <p class="meta">{{ ([m.runtime_text] + m.genres)|select|join(', ') }}{% if m.directors %}. Yönetmen: {{ m.directors|join(', ') }}{% endif %}</p>
+      {% if m.match.pct is not none %}
+      <div class="match">
+        <div class="match-bar" role="img" aria-label="Uygunluk yüzde {{ m.match.pct }}"><span style="--w: {{ m.match.pct }}%"></span></div>
+        <p class="match-pct">Uygunluk %{{ m.match.pct }}</p>
+        <ul class="match-tags">
+          {% for t in m.match.matched %}<li class="hit{% if t in m.story %} core{% endif %}"{% if t in m.story %} title="Konusunun merkezinde"{% endif %}>{{ t }}</li>{% endfor %}
+          {% for t in m.match.missed %}<li class="miss">{{ t }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if m.overview %}<p class="overview">{{ m.overview }}</p>{% endif %}
+      {% if m.pros %}<p class="pros">Yorumlarda övülen: {{ m.pros|map('lower_tr')|join(', ') }}</p>{% endif %}
+      {{ rating_row(m.ratings) }}
+    </div>
+    <div class="tc-side">
+      <span class="tc-rank" aria-label="{{ start + loop.index }}. sıra">{{ '%02d'|format(start + loop.index) }}</span>
+      <span class="tc-score {{ m.pusula.score|score_class }}"><b>{{ m.pusula.score|tr1 }}</b><small>Pusula</small></span>
+    </div>
+    <button type="button" class="tc-hide" data-hide aria-label="{{ m.title }} filmini gizle" title="Gördüm, bir daha gösterme">{{ icon("hide") }}</button>
+  </article>
+</li>
+{% endfor %}

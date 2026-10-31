@@ -5,76 +5,74 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
   function retrigger(el, cls) {
+    if (!el) return;
     el.classList.remove(cls);
     void el.offsetWidth; // animasyonu yeniden başlat
     el.classList.add(cls);
   }
-  function markCurtain() {
-    try { sessionStorage.setItem("ni-perde", "1"); } catch (_) { /* gizli sekme */ }
-  }
+  const store = {
+    get(key, fallback) {
+      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (_) { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { /* gizli sekme vb. */ }
+    },
+  };
 
-  /* ------------------------------------------------ perde + geri sayım */
-  const loading = $("#loading");
+  /* ================================================ salonun ışıkları */
+  const house = $("#loading");
+  const houseText = house ? $(".house-text", house) : null;
   const messages = [
-    "Film arşivi taranıyor…",
+    "Salon kararıyor…",
     "Temalar eşleştiriliyor…",
+    "Etiketler tek tek okunuyor…",
     "IMDb puanlarına bakılıyor…",
     "İzleyici yorumları okunuyor…",
-    "Pusula Puanı hesaplanıyor…",
-    "Biletler basılıyor…",
+    "Seçki hazırlanıyor…",
   ];
   let msgTimer = null;
-  let numTimer = null;
 
   function showLoading() {
-    markCurtain();
-    if (!loading || !loading.hidden) return;
-    const text = $(".loading-text", loading);
-    const num = $(".leader-num", loading);
+    try { sessionStorage.setItem("ni-isik", "1"); } catch (_) { /* yok say */ }
+    if (!house || !house.hidden) return;
     let i = 0;
-    let n = 3;
-    text.textContent = messages[0];
-    num.textContent = "3";
-    loading.hidden = false;
+    houseText.textContent = messages[0];
+    house.hidden = false;
     clearInterval(msgTimer);
-    clearInterval(numTimer);
-    numTimer = setInterval(() => {
-      n = n === 1 ? 3 : n - 1;
-      num.textContent = String(n);
-      retrigger(num, "tick");
-    }, 1000);
     msgTimer = setInterval(() => {
       i = (i + 1) % messages.length;
-      text.textContent = messages[i];
-      retrigger(text, "swap");
-    }, 1700);
+      houseText.textContent = messages[i];
+      retrigger(houseText, "swap");
+    }, 1600);
   }
   function hideLoading() {
-    if (loading) loading.hidden = true;
+    if (house) house.hidden = true;
     clearInterval(msgTimer);
-    clearInterval(numTimer);
   }
-
-  // Geri tuşuyla dönülünce her şey eski haline gelsin
   window.addEventListener("pageshow", (e) => {
     hideLoading();
     if (e.persisted) {
-      try { sessionStorage.removeItem("ni-perde"); } catch (_) { /* yok say */ }
-      const t = $("#ticket");
-      if (t) t.classList.remove("is-torn");
+      try { sessionStorage.removeItem("ni-isik"); } catch (_) { /* yok say */ }
       going = false;
     }
   });
 
-  $$("a[data-loading]").forEach((a) => a.addEventListener("click", (e) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-loading]");
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    if (a.hasAttribute("data-shuffle")) {
+      const url = new URL(a.href, location.href);
+      url.searchParams.set("karistir", String(1 + Math.floor(Math.random() * 99998)));
+      a.href = url.pathname + url.search;
+    }
     showLoading();
-  }));
+  });
   $$("[data-reload]").forEach((b) => b.addEventListener("click", () => { showLoading(); location.reload(); }));
 
-  /* ------------------------------------------------ afiş yüklenemezse */
+  /* ================================================ küçük yardımcılar */
   document.addEventListener("error", (e) => {
     const img = e.target;
     if (img.tagName !== "IMG") return;
@@ -88,13 +86,11 @@
     }
   }, true);
 
-  /* ------------------------------------------------ sıralama değişince gönder */
   $$("select[data-autosubmit]").forEach((s) => s.addEventListener("change", () => {
     showLoading();
-    setTimeout(() => s.form.submit(), reduceMotion ? 0 : 350);
+    setTimeout(() => s.form.submit(), reduceMotion ? 0 : 420);
   }));
 
-  /* ------------------------------------------------ fragman (tıklayınca yüklenir) */
   $$(".trailer[data-yt]").forEach((btn) => btn.addEventListener("click", () => {
     const key = btn.dataset.yt;
     if (!/^[A-Za-z0-9_-]{6,20}$/.test(key)) return;
@@ -109,29 +105,173 @@
     btn.replaceWith(wrap);
   }));
 
-  /* ------------------------------------------------ Pusula Puanı sayacı */
-  const curtainDelay = document.documentElement.classList.contains("with-curtain") ? 1300 : 450;
+  // Pusula Puanı sıfırdan sayarak gelir
+  const lightsDelay = document.documentElement.classList.contains("with-lights") ? 700 : 0;
   $$("[data-count]").forEach((el) => {
     const target = parseFloat(el.dataset.count);
     if (Number.isNaN(target) || reduceMotion) return;
     const duration = 1400;
-    const start = performance.now() + curtainDelay;
+    const start = performance.now() + 450 + lightsDelay;
     el.textContent = "0,0";
-    function frame(now) {
+    (function frame(now) {
       const t = Math.min(1, Math.max(0, (now - start) / duration));
       const eased = 1 - Math.pow(1 - t, 4);
       el.textContent = (target * eased).toFixed(1).replace(".", ",");
       if (t < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
+    })(performance.now());
   });
+
+  /* ================================================ sonuç kartları */
+  const list = $("#results");
+  if (list) setupResults(list);
+
+  function setupResults(list) {
+    const HIDDEN_KEY = "ni-gizli";
+    let hidden = new Set(store.get(HIDDEN_KEY, []));
+    let showHidden = false;
+    const note = $("#hidden-note");
+    const noteCount = $("#hidden-count");
+    const toggle = $("#toggle-hidden");
+    const moreBtn = $("[data-more]");
+    const moreNote = $("#more-note");
+    let loadingMore = false;
+    let firstBatch = true;
+
+    // Kartlar ekrana girdikçe sırayla gelir
+    const io = "IntersectionObserver" in window && !reduceMotion
+      ? new IntersectionObserver((entries) => {
+        const base = firstBatch ? lightsDelay : 0;
+        firstBatch = false;
+        entries.filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+          .forEach((e, n) => {
+            const li = e.target;
+            li.style.setProperty("--d", (base + n * 90) + "ms");
+            li.classList.remove("pre");
+            li.classList.add("in");
+            io.unobserve(li);
+          });
+      }, { rootMargin: "0px 0px -6% 0px" })
+      : null;
+
+    function setupCard(li) {
+      if (io) { li.classList.add("pre"); io.observe(li); } else { li.classList.add("in"); }
+      const id = Number(li.dataset.id);
+      if (hidden.has(id)) markHidden(li, false);
+      if (finePointer && !reduceMotion) {
+        const card = $(".tc-card", li);
+        const poster = $(".tc-poster", li);
+        card.addEventListener("pointermove", (e) => {
+          const r = card.getBoundingClientRect();
+          const x = (e.clientX - r.left) / r.width;
+          const y = (e.clientY - r.top) / r.height;
+          card.style.setProperty("--mx", (x * 100).toFixed(1) + "%");
+          card.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+          if (poster) {
+            poster.style.setProperty("--ry", ((x - 0.3) * 14).toFixed(2) + "deg");
+            poster.style.setProperty("--rx", ((0.5 - y) * 10).toFixed(2) + "deg");
+          }
+        });
+        card.addEventListener("pointerleave", () => {
+          if (poster) { poster.style.setProperty("--rx", "0deg"); poster.style.setProperty("--ry", "0deg"); }
+        });
+      }
+    }
+
+    function visibleCount() { return $$(".tc", list).filter((li) => !li.hidden).length; }
+
+    function updateNote() {
+      const n = $$(".tc", list).filter((li) => hidden.has(Number(li.dataset.id))).length;
+      if (!note) return;
+      note.hidden = n === 0;
+      noteCount.textContent = n === 1 ? "1" : String(n);
+      toggle.textContent = showHidden ? "Gizle" : "Göster";
+    }
+
+    function markHidden(li, animate) {
+      if (showHidden) { li.classList.add("is-hidden"); return; }
+      if (!animate || reduceMotion) { li.hidden = true; return; }
+      const h = li.offsetHeight;
+      li.classList.add("gone");
+      li.animate(
+        [{ height: h + "px", marginTop: "0px" }, { height: "0px", marginTop: "-20px" }],
+        { duration: 420, delay: 180, easing: "cubic-bezier(0.65, 0, 0.35, 1)" }
+      ).onfinish = () => { li.hidden = true; li.classList.remove("gone"); };
+    }
+
+    list.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-hide]");
+      if (!btn) return;
+      e.preventDefault();
+      const li = btn.closest(".tc");
+      const id = Number(li.dataset.id);
+      if (hidden.has(id)) {
+        hidden.delete(id);
+        li.classList.remove("is-hidden");
+        li.hidden = false;
+      } else {
+        hidden.add(id);
+        markHidden(li, true);
+      }
+      store.set(HIDDEN_KEY, Array.from(hidden).slice(-600));
+      updateNote();
+      if (visibleCount() < 6) loadMore();
+    });
+
+    if (toggle) toggle.addEventListener("click", () => {
+      showHidden = !showHidden;
+      $$(".tc", list).forEach((li) => {
+        if (!hidden.has(Number(li.dataset.id))) return;
+        li.hidden = !showHidden;
+        li.classList.toggle("is-hidden", showHidden);
+      });
+      updateNote();
+    });
+
+    async function loadMore() {
+      if (!moreBtn || loadingMore || !moreBtn.dataset.more) return;
+      loadingMore = true;
+      moreBtn.classList.add("loading");
+      moreBtn.textContent = "Seçki genişliyor…";
+      try {
+        const res = await fetch(moreBtn.dataset.more, { headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        const tpl = document.createElement("template");
+        tpl.innerHTML = data.html;
+        const fresh = $$(".tc", tpl.content);
+        fresh.forEach((li) => list.appendChild(li));
+        fresh.forEach(setupCard);
+        if (data.next) {
+          moreBtn.dataset.more = data.next;
+          moreNote.textContent = Math.max(0, data.total - data.shown) + " uygun film daha var";
+        } else {
+          moreBtn.closest(".more").remove();
+        }
+        updateNote();
+      } catch (_) {
+        moreNote.textContent = "Daha fazlası yüklenemedi, birazdan tekrar dene.";
+      } finally {
+        loadingMore = false;
+        if (document.body.contains(moreBtn)) {
+          moreBtn.classList.remove("loading");
+          moreBtn.textContent = "Daha fazla göster";
+        }
+      }
+      if (visibleCount() < 6 && document.body.contains(moreBtn)) loadMore();
+    }
+    if (moreBtn) moreBtn.addEventListener("click", loadMore);
+
+    $$(".tc", list).forEach(setupCard);
+    updateNote();
+    if (visibleCount() < 6) loadMore();
+  }
 
   /* ================================================ arama formu (ana sayfa) */
   const form = $("#finder");
   let going = false;
   if (!form) return;
 
-  const ticket = $("#ticket");
   const ticketSel = $("#ticket-sel");
   const ticketCount = $("#ticket-count");
   const emptyText = ticketSel ? ticketSel.textContent : "";
@@ -142,13 +282,35 @@
     return $$(`.chip[data-kind="${kind}"]`).filter((c) => c.dataset.key === String(key));
   }
 
-  function setState(chip, state, animate = true) {
+  function flyToken(from) {
+    if (reduceMotion || !ticketCount || !from || from.offsetParent === null || !from.animate) return;
+    const a = from.getBoundingClientRect();
+    const b = ticketCount.getBoundingClientRect();
+    const t = document.createElement("span");
+    t.className = "token";
+    t.style.left = (a.left + a.width / 2 - 6) + "px";
+    t.style.top = (a.top + a.height / 2 - 6) + "px";
+    document.body.appendChild(t);
+    const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+    const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+    const lift = Math.min(160, Math.abs(dy) * 0.35 + 60);
+    t.animate([
+      { transform: "translate(0, 0) scale(1)", opacity: 1 },
+      { transform: `translate(${dx * 0.45}px, ${dy * 0.45 - lift}px) scale(1.25)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${dx}px, ${dy}px) scale(0.35)`, opacity: 0.25 },
+    ], { duration: 680, easing: "cubic-bezier(0.5, 0, 0.3, 1)" }).onfinish = () => {
+      t.remove();
+      retrigger(ticketCount, "bump");
+    };
+  }
+
+  function setState(chip, state, opts = {}) {
     chipsFor(chip.dataset.kind, chip.dataset.key).forEach((c) => {
       c.dataset.state = String(state);
       c.setAttribute("aria-pressed", state ? "true" : "false");
       c.setAttribute("aria-label", `${c.dataset.label}: ${STATE_TEXT[state]}`);
-      if (animate && !reduceMotion) retrigger(c, "pop-in");
     });
+    if (state === 1 && opts.fly !== false) flyToken(chip);
   }
 
   function cycle(chip) {
@@ -194,19 +356,16 @@
     const next = new Set();
     const make = (item, cls) => {
       next.add(item.id);
-      const span = el("span", cls + (!initial && !shown.has(item.id) ? " t-new" : ""), item.label);
-      return span;
+      return el("span", cls + (!initial && !shown.has(item.id) ? " t-new" : ""), item.label);
     };
     const wanted = s.kwIn.map((i) => make(i, "t-in"))
       .concat(s.gIn.map((i) => make(i, "t-genre")))
       .concat(s.prov.map((i) => make(i, "t-genre")));
     const unwanted = s.kwOut.concat(s.gOut).map((i) => make(i, "t-out"));
-
     const total = wanted.length + unwanted.length;
     if (ticketCount) {
-      const before = ticketCount.textContent;
-      ticketCount.textContent = total ? String(total) : "";
-      if (!initial && before !== ticketCount.textContent && total) retrigger(ticketCount, "bump");
+      ticketCount.textContent = String(total);
+      ticketCount.classList.toggle("zero", total === 0);
     }
     ticketSel.textContent = "";
     shown = next;
@@ -232,20 +391,22 @@
     s.gIn.forEach((i) => add("g", i.key));
     s.gOut.forEach((i) => add("xg", i.key));
     s.prov.forEach((i) => add("p", i.key));
-    // boş seçimleri adres çubuğuna taşımayalım
-    $$("select", form).forEach((sel) => { sel.disabled = !sel.value; });
-    setTimeout(() => $$("select", form).forEach((sel) => { sel.disabled = false; }), 0);
+    // boş ve varsayılan seçimleri adres çubuğuna taşımayalım
+    const quiet = $$("select", form).filter((sel) => !sel.value);
+    const tarz = $('input[name="tarz"]:checked', form);
+    if (tarz && tarz.value === "dengeli") quiet.push(...$$('input[name="tarz"]', form));
+    quiet.forEach((x) => { x.disabled = true; });
+    setTimeout(() => quiet.forEach((x) => { x.disabled = false; }), 0);
   }
 
-  /* Gönder: önce bilet koçanı kopar, perde kapanır, sonra arama başlar */
+  // Gönder: önce ışıklar kararır, sonra arama başlar
   form.addEventListener("submit", (e) => {
     buildHidden();
     if (going || reduceMotion) { showLoading(); return; }
     e.preventDefault();
     going = true;
     const submitter = e.submitter;
-    if (ticket) ticket.classList.add("is-torn");
-    setTimeout(showLoading, 280);
+    showLoading();
     setTimeout(() => {
       if (form.requestSubmit) {
         form.requestSubmit(submitter && submitter.form === form ? submitter : undefined);
@@ -253,10 +414,10 @@
         if (submitter && submitter.formAction) form.action = submitter.formAction;
         form.submit();
       }
-    }, 780);
+    }, 650);
   });
 
-  /* ------------------------------------------------ sekmeler */
+  // Sekmeler
   const tabs = $$('[role="tab"]', form);
   function openTab(name) {
     tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
@@ -272,47 +433,54 @@
     openTab(next.dataset.tab);
   });
 
-  /* ------------------------------------------------ ruh hali */
+  // Öneri tarzı açıklaması
+  const segDesc = $("#seg-desc");
+  $$('input[name="tarz"]', form).forEach((r) => r.addEventListener("change", () => {
+    if (!segDesc) return;
+    segDesc.textContent = r.dataset.desc || "";
+    retrigger(segDesc, "swap");
+  }));
+
+  // Ruh hali kartları
   const moods = $$(".mood", form);
   function clearMood() { moods.forEach((m) => m.setAttribute("aria-pressed", "false")); }
-  function resetAll(animate) {
-    $$(".chip", form).forEach((c) => { if (c.dataset.state !== "0") setState(c, 0, animate); });
+  function resetAll() {
+    $$(".chip", form).forEach((c) => { if (c.dataset.state !== "0") setState(c, 0); });
     $$("select", form).forEach((s) => { s.value = ""; });
-    const gem = $('input[name="cevher"]', form);
-    if (gem) gem.checked = false;
+    const dengeli = $('input[name="tarz"][value="dengeli"]', form);
+    if (dengeli) dengeli.checked = true;
     clearMood();
   }
   moods.forEach((m) => {
     m.setAttribute("aria-pressed", "false");
     m.addEventListener("click", () => {
       const data = JSON.parse(m.dataset.mood);
-      resetAll(false);
+      $$(".chip", form).forEach((c) => { if (c.dataset.state !== "0") setState(c, 0); });
+      clearMood();
       const steps = [];
       data.include.forEach((k) => { const c = chipsFor("kw", k)[0]; if (c) steps.push([c, 1]); });
       data.genres.forEach((g) => { const c = chipsFor("genre", g)[0]; if (c) steps.push([c, 1]); });
       data.xgenres.forEach((g) => { const c = chipsFor("genre", g)[0]; if (c) steps.push([c, 2]); });
       steps.forEach(([c, st], idx) => {
-        if (reduceMotion) setState(c, st, false);
-        else setTimeout(() => { setState(c, st); updateTicket(); }, 70 * idx);
+        if (reduceMotion) { setState(c, st, { fly: false }); return; }
+        setTimeout(() => { setState(c, st); updateTicket(); }, 90 * idx);
       });
-      const puan = $("#sel-puan");
-      if (puan && data.puan) puan.value = data.puan;
       m.setAttribute("aria-pressed", "true");
-      if (!reduceMotion) retrigger(m, "pop-in");
+      retrigger(m, "pop");
       updateTicket();
     });
   });
   const reset = $("#reset");
-  if (reset) reset.addEventListener("click", () => { resetAll(false); updateTicket(); });
+  if (reset) reset.addEventListener("click", () => { resetAll(); updateTicket(); });
 
-  /* ------------------------------------------------ serbest tema araması */
+  // Serbest tema araması
   const input = $("#kw-input");
-  const list = $("#kw-suggest");
+  const suggest = $("#kw-suggest");
   const custom = $("#custom-chips");
   let debounce = null;
   let lastQuery = "";
 
-  function closeList() { list.hidden = true; list.textContent = ""; }
+  function closeList() { suggest.hidden = true; suggest.textContent = ""; }
 
   function addTerm(item) {
     const existing = chipsFor("kw", item.key);
@@ -339,17 +507,17 @@
   }
 
   function render(items) {
-    list.textContent = "";
-    if (!items.length) list.appendChild(el("div", "empty-row", "Eşleşen tema bulunamadı. İngilizce yazmayı dene."));
+    suggest.textContent = "";
+    if (!items.length) suggest.appendChild(el("div", "empty-row", "Eşleşen tema bulunamadı. İngilizce yazmayı dene."));
     items.forEach((item) => {
       const b = document.createElement("button");
       b.type = "button";
       b.setAttribute("role", "option");
       b.append(el("span", "", item.label), el("small", "", item.source === "katalog" ? "hazır tema" : "TMDB etiketi"));
       b.addEventListener("click", () => addTerm(item));
-      list.appendChild(b);
+      suggest.appendChild(b);
     });
-    list.hidden = false;
+    suggest.hidden = false;
   }
 
   if (input) {
@@ -367,15 +535,14 @@
         } catch (_) { closeList(); }
       }, 250);
     });
-    // Alttaki bilet öneri listesini kapatmasın diye kutuyu ekranın ortasına getir
     input.addEventListener("focus", () => input.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" }));
     input.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeList();
-      if (e.key === "ArrowDown") { const first = $("button", list); if (first) { e.preventDefault(); first.focus(); } }
-      if (e.key === "Enter") { e.preventDefault(); const first = $("button", list); if (first) first.click(); }
+      if (e.key === "ArrowDown") { const first = $("button", suggest); if (first) { e.preventDefault(); first.focus(); } }
+      if (e.key === "Enter") { e.preventDefault(); const first = $("button", suggest); if (first) first.click(); }
     });
-    list.addEventListener("keydown", (e) => {
-      const btns = $$("button", list);
+    suggest.addEventListener("keydown", (e) => {
+      const btns = $$("button", suggest);
       const i = btns.indexOf(document.activeElement);
       if (e.key === "ArrowDown" && i < btns.length - 1) { e.preventDefault(); btns[i + 1].focus(); }
       if (e.key === "ArrowUp") { e.preventDefault(); (i > 0 ? btns[i - 1] : input).focus(); }

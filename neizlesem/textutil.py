@@ -83,9 +83,3 @@ def today_tr() -> str:
     """'29 Ekim 2026, Perşembe'"""
     n = now_tr()
     return f"{n.day} {MONTHS[n.month - 1]} {n.year}, {WEEKDAYS[n.weekday()]}"
-
-
-def ticket_serial() -> str:
-    """Bilet üzerindeki süs numarası: yılın günü + saat."""
-    n = now_tr()
-    return f"{n.timetuple().tm_yday:03d}{n.hour:02d}"

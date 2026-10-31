@@ -203,3 +203,32 @@ def test_empty_state_offers_one_click_fixes(client):
     assert "Dönem filtresini kaldır" in html and "Dil filtresini kaldır" in html
     assert "Temaları kaldırıp sadece dille ara" in html
     assert "tema yerine tür seçmek" in html
+
+
+def test_results_page_has_more_and_tools(client):
+    html = client.get("/sonuclar").get_data(as_text=True)
+    assert "Daha fazla göster" in html and "uygun film daha var" in html
+    assert 'data-more="/sonuclar/devam?' in html
+    assert "Karıştır" in html and 'aria-current="true"' in html     # öneri tarzı seçili
+    assert "Herkesin sevdiği filmler" in html
+    titled = client.get("/sonuclar?g=28&k=intikam").get_data(as_text=True)
+    assert '<h1 class="rhead-title foil">İntikam ve aksiyon</h1>' in titled
+
+
+def test_load_more_endpoint_returns_next_cards(client):
+    import re
+    first = client.get("/sonuclar").get_data(as_text=True)
+    url = re.search(r'data-more="([^"]+)"', first).group(1).replace("&amp;", "&")
+    data = client.get(url).get_json()
+    assert data["shown"] > 16 and data["total"] >= data["shown"]
+    first_ids = set(re.findall(r'data-id="(\d+)"', first))
+    more_ids = set(re.findall(r'data-id="(\d+)"', data["html"]))
+    assert more_ids and not first_ids & more_ids
+    assert ">17<" in data["html"]                                  # sıra numarası devam ediyor
+
+
+def test_index_has_poster_wall_and_modes(client):
+    html = client.get("/").get_data(as_text=True)
+    assert 'class="wall"' in html and "image.tmdb.org/t/p/w154" in html
+    assert 'name="tarz" value="kesif"' in html and "Az bilinen" in html
+    assert "Üslup &amp; anlatım" in html

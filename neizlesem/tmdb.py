@@ -195,6 +195,10 @@ class TMDBClient:
     def person_movie_credits(self, person_id: int) -> dict:
         return self.get(f"/person/{int(person_id)}/movie_credits", {"language": "tr-TR"}, ttl=14 * DAY) or {}
 
+    def trending_week(self) -> list[dict]:
+        data = self.get("/trending/movie/week", {"language": "tr-TR"}, ttl=12 * HOUR) or {}
+        return data.get("results", [])
+
     def watch_providers_tr(self) -> list[dict]:
         data = self.get("/watch/providers/movie", {"watch_region": "TR", "language": "tr-TR"}, ttl=7 * DAY) or {}
         return data.get("results", [])
